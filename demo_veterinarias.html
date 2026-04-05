@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Veterinarias Bogotá — DataPocket</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        .dashboard {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+        .dash-header {
+            text-align: center;
+            padding: 20px 0 16px;
+        }
+        .dash-header h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+        .dash-header .timestamp {
+            font-size: 0.7rem;
+            opacity: 0.5;
+            margin-top: 4px;
+        }
+        .dash-header .brand {
+            font-size: 0.65rem;
+            opacity: 0.35;
+            margin-top: 2px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            animation: fadeUp 0.4s ease both;
+        }
+        .card h3 {
+            font-size: 0.8rem;
+            font-weight: 500;
+            opacity: 0.7;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .kpi-card {
+            text-align: center;
+            padding: 20px 16px;
+        }
+        .kpi-grid .kpi-card { margin-bottom: 0; }
+        .kpi-label {
+            font-size: 0.75rem;
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 4px;
+        }
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #38bdf8;
+            line-height: 1.1;
+        }
+        .kpi-subtitle {
+            font-size: 0.7rem;
+            opacity: 0.5;
+            margin-top: 4px;
+        }
+        .kpi-trend {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+        .chart-card .chart-container {
+            position: relative;
+            height: 220px;
+        }
+        .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+        th, td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+            white-space: nowrap;
+        }
+        th {
+            font-weight: 600;
+            opacity: 0.7;
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            letter-spacing: 0.05em;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card:nth-child(1) { animation-delay: 0s; }
+        .card:nth-child(2) { animation-delay: 0.05s; }
+        .card:nth-child(3) { animation-delay: 0.1s; }
+        .card:nth-child(4) { animation-delay: 0.15s; }
+        .card:nth-child(5) { animation-delay: 0.2s; }
+        .card:nth-child(6) { animation-delay: 0.25s; }
+        .card:nth-child(7) { animation-delay: 0.3s; }
+        .refresh-hint {
+            text-align: center;
+            font-size: 0.65rem;
+            opacity: 0.3;
+            padding: 12px;
+        }
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background: #1e293b;
+            border-top: 1px solid #334155;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-around;
+            z-index: 100;
+        }
+        .bottom-bar button {
+            background: none;
+            border: none;
+            color: #e2e8f0;
+            opacity: 0.5;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            font-family: inherit;
+        }
+        .bottom-bar button.active {
+            opacity: 1;
+            color: #38bdf8;
+        }
+        .bottom-bar button svg {
+            width: 20px;
+            height: 20px;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .dot-green { background: #34d399; }
+        .dot-yellow { background: #facc15; }
+        .dot-red { background: #f87171; }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="dash-header">
+            <h1>🐾 CRM Veterinarias Bogotá</h1>
+            <div class="timestamp">Actualizado: Abril 2026</div>
+            <div class="brand">Powered by DataPocket × KanbanPro</div>
+        </div>
+
+        <!-- KPI Grid -->
+        <div class="kpi-grid">
+            <div class="card kpi-card">
+                <div class="kpi-label">Total Leads</div>
+                <div class="kpi-value">523</div>
+                <div class="kpi-subtitle">Base Airtable</div>
+                <div class="kpi-trend" style="color:#34d399">↑ 47 esta semana</div>
+            </div>
+            <div class="card kpi-card">
+                <div class="kpi-label">Contactados</div>
+                <div class="kpi-value">187</div>
+                <div class="kpi-subtitle">35.8% del total</div>
+                <div class="kpi-trend" style="color:#34d399">↑ 12.3%</div>
+            </div>
+            <div class="card kpi-card">
+                <div class="kpi-label">Demos Agendadas</div>
+                <div class="kpi-value">34</div>
+                <div class="kpi-subtitle">18.2% conversión</div>
+                <div class="kpi-trend" style="color:#facc15">→ estable</div>
+            </div>
+            <div class="card kpi-card">
+                <div class="kpi-label">Ventas Cerradas</div>
+                <div class="kpi-value">8</div>
+                <div class="kpi-subtitle">$176 USD</div>
+                <div class="kpi-trend" style="color:#34d399">↑ 3 este mes</div>
+            </div>
+        </div>
+
+        <!-- Funnel Chart -->
+        <div class="card chart-card">
+            <h3>Funnel de Ventas</h3>
+            <div class="chart-container">
+                <canvas id="funnelChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Leads por Zona -->
+        <div class="card chart-card">
+            <h3>Leads por Zona</h3>
+            <div class="chart-container">
+                <canvas id="zonaChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Ventas por Semana -->
+        <div class="card chart-card">
+            <h3>Llamadas por Semana</h3>
+            <div class="chart-container">
+                <canvas id="weeklyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Pipeline Status -->
+        <div class="card chart-card">
+            <h3>Estado del Pipeline</h3>
+            <div class="chart-container">
+                <canvas id="pipelineChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Top Leads Table -->
+        <div class="card">
+            <h3>Top Prospectos Activos</h3>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Veterinaria</th>
+                            <th>Zona</th>
+                            <th>Contacto</th>
+                            <th>Etapa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="status-dot dot-green"></span></td>
+                            <td>Dxpatologovet</td>
+                            <td>Norte</td>
+                            <td>Don Ricardo</td>
+                            <td>Demo</td>
+                        </tr>
+                        <tr>
+                            <td><span class="status-dot dot-green"></span></td>
+                            <td>VetSalud Plus</td>
+                            <td>Usaquén</td>
+                            <td>Dra. López</td>
+                            <td>Propuesta</td>
+                        </tr>
+                        <tr>
+                            <td><span class="status-dot dot-yellow"></span></td>
+                            <td>PetCare 24h</td>
+                            <td>Suba</td>
+                            <td>Dr. Martínez</td>
+                            <td>Follow-up</td>
+                        </tr>
+                        <tr>
+                            <td><span class="status-dot dot-yellow"></span></td>
+                            <td>Animal Home</td>
+                            <td>Niza</td>
+                            <td>Sra. Gómez</td>
+                            <td>Interesado</td>
+                        </tr>
+                        <tr>
+                            <td><span class="status-dot dot-red"></span></td>
+                            <td>VetExpress</td>
+                            <td>Chapinero</td>
+                            <td>Dr. Ruiz</td>
+                            <td>Frío</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="refresh-hint">Desliza hacia abajo para actualizar</div>
+    </div>
+
+    <div class="bottom-bar">
+        <button class="active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Dashboard
+        </button>
+        <button onclick="location.reload()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+            Refresh
+        </button>
+        <button>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.32 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Config
+        </button>
+    </div>
+
+    <script>
+        const textColor = '#e2e8f0';
+        const gridColor = '#33415533';
+
+        // Funnel
+        new Chart(document.getElementById('funnelChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Leads', 'Contactados', 'Interesados', 'Demo', 'Propuesta', 'Cerrado'],
+                datasets: [{
+                    data: [523, 187, 89, 34, 15, 8],
+                    backgroundColor: ['#38bdf888', '#a78bfa88', '#34d39988', '#fb923c88', '#f472b688', '#facc1588'],
+                    borderColor: ['#38bdf8', '#a78bfa', '#34d399', '#fb923c', '#f472b6', '#facc15'],
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } },
+                    y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } }
+                }
+            }
+        });
+
+        // Leads por Zona
+        new Chart(document.getElementById('zonaChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Usaquén', 'Suba', 'Niza/Norte', 'Chapinero', 'Fontibón', 'Otros'],
+                datasets: [{
+                    data: [142, 118, 95, 73, 52, 43],
+                    backgroundColor: ['#38bdf8cc', '#a78bfacc', '#34d399cc', '#fb923ccc', '#f472b6cc', '#facc15cc'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'bottom', labels: { color: textColor, font: { size: 10 }, padding: 12 } }
+                }
+            }
+        });
+
+        // Llamadas por Semana
+        new Chart(document.getElementById('weeklyChart'), {
+            type: 'line',
+            data: {
+                labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Sem 5', 'Sem 6', 'Sem 7', 'Sem 8'],
+                datasets: [{
+                    label: 'Llamadas',
+                    data: [12, 19, 24, 18, 31, 27, 35, 42],
+                    borderColor: '#38bdf8',
+                    backgroundColor: '#38bdf822',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#38bdf8',
+                    borderWidth: 2
+                }, {
+                    label: 'Contactos efectivos',
+                    data: [4, 7, 10, 6, 14, 11, 16, 19],
+                    borderColor: '#34d399',
+                    backgroundColor: '#34d39922',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#34d399',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true, labels: { color: textColor, font: { size: 11 } } } },
+                scales: {
+                    x: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } },
+                    y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } }
+                }
+            }
+        });
+
+        // Pipeline Status
+        new Chart(document.getElementById('pipelineChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Frío', 'Tibio', 'Caliente', 'Negociando', 'Cerrado'],
+                datasets: [{
+                    label: 'Leads',
+                    data: [246, 134, 89, 46, 8],
+                    backgroundColor: ['#64748b88', '#facc1588', '#fb923c88', '#f472b688', '#34d39988'],
+                    borderColor: ['#64748b', '#facc15', '#fb923c', '#f472b6', '#34d399'],
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } },
+                    y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
