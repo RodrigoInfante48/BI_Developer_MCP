@@ -1,860 +1,543 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clínica Dental — DataPocket</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap');
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NZ Business Financial Report — Q4 2025</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&display=swap');
 
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --bg:      #1e1e2f;
+      --surf:    #252538;
+      --surf2:   #2d2d45;
+      --border:  #3a3a55;
+      --text:    #eef0ff;
+      --muted:   #8888aa;
+      --green:   #39ff8e;
+      --blue:    #5bc8fc;
+      --purple:  #a78bfa;
+      --orange:  #fb923c;
+      --yellow:  #facc15;
+      --red:     #f87171;
+    }
+    html { scroll-behavior:smooth; }
+    body {
+      font-family:'DM Sans',system-ui,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100dvh;
+      -webkit-font-smoothing:antialiased;
+    }
+    .app {
+      display:flex; flex-direction:column;
+      max-width:520px; margin:0 auto;
+      padding:0 14px 88px;
+    }
 
-        :root {
-            --bg:         #1e1e2f;
-            --surface:    #252538;
-            --surface2:   #2d2d45;
-            --border:     #3a3a55;
-            --text:       #eef0ff;
-            --muted:      #8888aa;
-            --green:      #39ff8e;
-            --green-dim:  #39ff8e22;
-            --blue:       #5bc8fc;
-            --blue-dim:   #5bc8fc22;
-            --purple:     #a78bfa;
-            --orange:     #fb923c;
-            --yellow:     #facc15;
-            --red:        #f87171;
-        }
+    /* ── Header ── */
+    .header { padding:24px 0 16px; display:flex; flex-direction:column; gap:4px; }
+    .header-top { display:flex; align-items:center; justify-content:space-between; }
+    .header-badge {
+      display:inline-flex; align-items:center; gap:6px;
+      background:#39ff8e18; border:1px solid var(--green);
+      border-radius:20px; padding:3px 10px;
+      font-size:.62rem; font-weight:700; color:var(--green);
+      letter-spacing:.1em; text-transform:uppercase;
+    }
+    .live-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse 1.8s ease-in-out infinite; }
+    .header h1 { font-size:1.25rem; font-weight:700; letter-spacing:-.03em; margin-top:6px; }
+    .header .meta { font-size:.67rem; color:var(--muted); margin-top:2px; }
+    .header .source { font-size:.58rem; color:var(--muted); opacity:.45; margin-top:1px; }
 
-        html { scroll-behavior: smooth; }
+    /* ── Section label ── */
+    .sec { font-size:.6rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:10px 0 6px 2px; }
 
-        body {
-            font-family: 'DM Sans', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100dvh;
-            -webkit-font-smoothing: antialiased;
-            overscroll-behavior-y: contain;
-        }
+    /* ── KPI grid ── */
+    .kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+    .kpi-full { grid-column:1/-1; }
+    .kpi {
+      background:var(--surf); border:1px solid var(--border);
+      border-radius:16px; padding:16px 14px 12px;
+      display:flex; flex-direction:column; gap:3px;
+      position:relative; overflow:hidden;
+      animation:fadeUp .4s ease both;
+    }
+    .kpi::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:3px;
+      border-radius:16px 16px 0 0;
+      background:var(--ac, var(--blue));
+    }
+    .kpi.g { --ac:var(--green); }
+    .kpi.b { --ac:var(--blue); }
+    .kpi.p { --ac:var(--purple); }
+    .kpi.o { --ac:var(--orange); }
+    .kpi.y { --ac:var(--yellow); }
 
-        /* ── Layout ── */
-        .app {
-            display: flex;
-            flex-direction: column;
-            max-width: 520px;
-            margin: 0 auto;
-            padding: 0 16px 88px;
-        }
+    .kpi-lbl { font-size:.65rem; font-weight:500; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; }
+    .kpi-val { font-size:1.95rem; font-weight:700; line-height:1.05; letter-spacing:-.04em; }
+    .kpi-full .kpi-val { font-size:2.4rem; }
+    .kpi-sub { font-size:.63rem; color:var(--muted); }
+    .badge {
+      display:inline-flex; align-items:center; gap:2px;
+      font-size:.7rem; font-weight:600; margin-top:5px;
+      padding:2px 8px; border-radius:20px; width:fit-content;
+    }
+    .up   { background:#39ff8e14; color:var(--green); }
+    .down { background:#f8717114; color:var(--red); }
+    .flat { background:#facc1514; color:var(--yellow); }
 
-        /* ── Header ── */
-        .header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 28px 0 20px;
-            gap: 4px;
-        }
-        .header-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--green-dim);
-            border: 1px solid var(--green);
-            border-radius: 20px;
-            padding: 3px 12px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: var(--green);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            margin-bottom: 6px;
-        }
-        .live-dot {
-            width: 7px; height: 7px;
-            border-radius: 50%;
-            background: var(--green);
-            animation: pulse 1.8s ease-in-out infinite;
-        }
-        .header h1 {
-            font-size: 1.45rem;
-            font-weight: 700;
-            letter-spacing: -0.03em;
-            text-align: center;
-        }
-        .header .subtitle {
-            font-size: 0.72rem;
-            color: var(--muted);
-            text-align: center;
-        }
-        .source-tag {
-            font-size: 0.6rem;
-            color: var(--muted);
-            opacity: 0.5;
-            margin-top: 2px;
-            text-align: center;
-            letter-spacing: 0.06em;
-        }
+    /* ── Cards ── */
+    .card {
+      background:var(--surf); border:1px solid var(--border);
+      border-radius:16px; padding:16px 14px;
+      margin-bottom:8px; animation:fadeUp .4s ease both;
+    }
+    .card h3 { font-size:.7rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:3px; }
+    .card p  { font-size:.62rem; color:var(--muted); opacity:.6; margin-bottom:12px; }
+    .ch { position:relative; }
+    .ch.h220 { height:220px; }
+    .ch.h260 { height:260px; }
+    .ch.h300 { height:300px; }
+    .ch.h380 { height:380px; }
 
-        /* ── Section label ── */
-        .section-label {
-            font-size: 0.62rem;
-            font-weight: 600;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--muted);
-            margin: 8px 0 8px 2px;
-        }
+    /* ── Industry table ── */
+    .ind-table { width:100%; border-collapse:collapse; font-size:.7rem; }
+    .ind-table th {
+      font-size:.6rem; font-weight:700; color:var(--muted); text-transform:uppercase;
+      letter-spacing:.06em; padding:6px 8px; border-bottom:1px solid var(--border);
+      text-align:right; white-space:nowrap;
+    }
+    .ind-table th:first-child { text-align:left; }
+    .ind-table td { padding:6px 8px; border-bottom:1px solid #33335520; white-space:nowrap; text-align:right; }
+    .ind-table td:first-child { text-align:left; max-width:160px; overflow:hidden; text-overflow:ellipsis; color:var(--text); font-weight:500; }
+    .ind-table tr:last-child td { border-bottom:none; }
+    .ind-table tr:hover td { background:#ffffff06; }
+    .tbl-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .m-pos { color:var(--green); font-weight:700; }
+    .m-mid { color:var(--blue); }
+    .m-neg { color:var(--red); }
+    .g-pos { color:var(--green); font-weight:700; }
+    .g-neg { color:var(--red); font-weight:700; }
 
-        /* ── KPI Cards ── */
-        .kpi-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .kpi-full {
-            grid-column: 1 / -1;
-        }
-        .kpi-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 18px 16px 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            animation: fadeUp 0.4s ease both;
-            position: relative;
-            overflow: hidden;
-        }
-        .kpi-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            border-radius: 18px 18px 0 0;
-            background: var(--accent, var(--blue));
-        }
-        .kpi-card.green { --accent: var(--green); }
-        .kpi-card.blue  { --accent: var(--blue); }
-        .kpi-card.purple{ --accent: var(--purple); }
-        .kpi-card.orange{ --accent: var(--orange); }
+    /* ── Summary stats row ── */
+    .stat-row { display:flex; gap:8px; margin-top:12px; }
+    .stat { flex:1; display:flex; flex-direction:column; gap:1px; }
+    .stat .s-lbl { font-size:.58rem; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; }
+    .stat .s-val { font-size:.95rem; font-weight:700; }
 
-        .kpi-label {
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-        }
-        .kpi-value {
-            font-size: 2.1rem;
-            font-weight: 700;
-            color: var(--text);
-            line-height: 1.05;
-            letter-spacing: -0.04em;
-        }
-        .kpi-value.green { color: var(--green); }
-        .kpi-value.blue  { color: var(--blue); }
-        .kpi-full .kpi-value { font-size: 2.6rem; }
+    /* ── Bottom Nav ── */
+    .bnav {
+      position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+      width:100%; max-width:520px;
+      background:var(--surf); border-top:1px solid var(--border);
+      padding:8px 16px; padding-bottom:max(8px, env(safe-area-inset-bottom));
+      display:flex; justify-content:space-around; z-index:200;
+    }
+    .nb {
+      display:flex; flex-direction:column; align-items:center; gap:2px;
+      background:none; border:none; cursor:pointer; color:var(--muted);
+      font-family:inherit; font-size:.6rem; font-weight:500;
+      min-height:44px; min-width:52px; padding:5px 6px;
+      border-radius:10px; -webkit-tap-highlight-color:transparent; transition:all .15s;
+    }
+    .nb svg { width:20px; height:20px; }
+    .nb.active { color:var(--blue); }
+    .nb:active { background:var(--surf2); transform:scale(.92); }
 
-        .kpi-sub {
-            font-size: 0.68rem;
-            color: var(--muted);
-            margin-top: 2px;
-        }
-        .kpi-trend {
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-top: 6px;
-            padding: 2px 8px;
-            border-radius: 20px;
-            width: fit-content;
-        }
-        .trend-up   { background: #39ff8e18; color: var(--green); }
-        .trend-flat { background: #facc1518; color: var(--yellow); }
-        .trend-down { background: #f8717118; color: var(--red); }
+    /* ── Animations ── */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:.35} }
 
-        /* ── Chart Cards ── */
-        .chart-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 18px 16px 16px;
-            margin-bottom: 10px;
-            animation: fadeUp 0.4s ease both;
-        }
-        .chart-card h3 {
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 4px;
-        }
-        .chart-desc {
-            font-size: 0.67rem;
-            color: var(--muted);
-            opacity: 0.6;
-            margin-bottom: 14px;
-        }
-        .chart-wrap {
-            position: relative;
-            height: 260px;
-        }
-        .chart-wrap.short { height: 200px; }
-        .chart-wrap.tall  { height: 300px; }
-
-        /* ── Filter Tabs ── */
-        .filter-bar {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 14px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            padding-bottom: 2px;
-        }
-        .filter-bar::-webkit-scrollbar { display: none; }
-        .filter-btn {
-            flex-shrink: 0;
-            height: 36px;
-            padding: 0 16px;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            background: transparent;
-            color: var(--muted);
-            font-family: inherit;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .filter-btn.active {
-            background: var(--blue);
-            border-color: var(--blue);
-            color: #0f0f1a;
-            font-weight: 700;
-        }
-        .filter-btn:active { opacity: 0.75; transform: scale(0.97); }
-
-        /* ── Summary Row ── */
-        .summary-row {
-            display: flex;
-            gap: 10px;
-            margin-top: 14px;
-        }
-        .summary-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .summary-item .s-label {
-            font-size: 0.62rem;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-        }
-        .summary-item .s-val {
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: var(--text);
-        }
-
-        /* ── Funnel bars ── */
-        .funnel-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 6px;
-        }
-        .funnel-row {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .funnel-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-        }
-        .funnel-name {
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: var(--text);
-        }
-        .funnel-count {
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: var(--muted);
-        }
-        .funnel-track {
-            height: 8px;
-            background: var(--surface2);
-            border-radius: 6px;
-            overflow: hidden;
-        }
-        .funnel-fill {
-            height: 100%;
-            border-radius: 6px;
-            transition: width 1s cubic-bezier(.16,1,.3,1);
-        }
-
-        /* ── Procedures Table ── */
-        .proc-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 6px;
-        }
-        .proc-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            background: var(--surface2);
-            border-radius: 12px;
-        }
-        .proc-icon {
-            width: 36px; height: 36px;
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem;
-            flex-shrink: 0;
-        }
-        .proc-info { flex: 1; min-width: 0; }
-        .proc-name {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .proc-volume { font-size: 0.67rem; color: var(--muted); margin-top: 1px; }
-        .proc-revenue {
-            font-size: 0.82rem;
-            font-weight: 700;
-            color: var(--green);
-            flex-shrink: 0;
-        }
-
-        /* ── Bottom Nav ── */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0; left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            max-width: 520px;
-            background: var(--surface);
-            border-top: 1px solid var(--border);
-            padding: 8px 16px;
-            padding-bottom: max(8px, env(safe-area-inset-bottom));
-            display: flex;
-            justify-content: space-around;
-            z-index: 200;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-        .nav-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--muted);
-            font-family: inherit;
-            font-size: 0.62rem;
-            font-weight: 500;
-            min-height: 44px;
-            min-width: 56px;
-            padding: 6px 8px;
-            border-radius: 12px;
-            -webkit-tap-highlight-color: transparent;
-            transition: all 0.15s;
-        }
-        .nav-btn svg { width: 22px; height: 22px; }
-        .nav-btn.active { color: var(--blue); }
-        .nav-btn:active { background: var(--surface2); transform: scale(0.93); }
-
-        /* ── Animations ── */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(14px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50%       { opacity: 0.4; transform: scale(0.85); }
-        }
-
-        .kpi-card:nth-child(1) { animation-delay: 0.00s; }
-        .kpi-card:nth-child(2) { animation-delay: 0.06s; }
-        .kpi-card:nth-child(3) { animation-delay: 0.12s; }
-        .kpi-card:nth-child(4) { animation-delay: 0.18s; }
-        .kpi-card:nth-child(5) { animation-delay: 0.24s; }
-        .chart-card:nth-of-type(1) { animation-delay: 0.10s; }
-        .chart-card:nth-of-type(2) { animation-delay: 0.16s; }
-        .chart-card:nth-of-type(3) { animation-delay: 0.22s; }
-        .chart-card:nth-of-type(4) { animation-delay: 0.28s; }
-
-        .footer {
-            text-align: center;
-            font-size: 0.6rem;
-            color: var(--muted);
-            opacity: 0.3;
-            padding: 16px 0 4px;
-        }
-    </style>
+    .footer { text-align:center; font-size:.58rem; color:var(--muted); opacity:.25; padding:14px 0 4px; }
+  </style>
 </head>
 <body>
 <div class="app">
 
-    <!-- Header -->
-    <header class="header">
-        <div class="header-badge">
-            <span class="live-dot"></span> Live Q4 2025
-        </div>
-        <h1>🦷 Clínica Dental Premium</h1>
-        <p class="subtitle">Dashboard de Rendimiento Financiero · Dic 2025</p>
-        <p class="source-tag">Fuente: Business Data Collection NZ · Health Care &amp; Social Assistance</p>
-    </header>
-
-    <!-- Filter Tabs -->
-    <div class="filter-bar" role="tablist">
-        <button class="filter-btn active" data-period="2025">2025</button>
-        <button class="filter-btn" data-period="2024">2024</button>
-        <button class="filter-btn" data-period="all">Histórico</button>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-top">
+      <div class="header-badge"><span class="live-dot"></span>Q4 2025 Final</div>
     </div>
+    <h1>NZ Business Financial Report</h1>
+    <p class="meta">Business Data Collection · 26 Industries · December Quarter 2025</p>
+    <p class="source">Source: Stats NZ — NZSIOC Level 2 · Current Prices · Unadjusted</p>
+  </header>
 
-    <!-- KPI Section -->
-    <p class="section-label">Indicadores Clave · Q4 2025</p>
-
-    <div class="kpi-row">
-        <!-- Ingresos full-width -->
-        <div class="kpi-card green kpi-full" style="animation-delay:0.00s">
-            <div class="kpi-label">Ingresos Totales (Ventas)</div>
-            <div class="kpi-value green">$6,758M</div>
-            <div class="kpi-sub">NZD · Precios corrientes · Q4 2025</div>
-            <div class="kpi-trend trend-up">↑ +8.7% vs Q4 2024 ($6,218M)</div>
-        </div>
+  <!-- KPIs -->
+  <p class="sec">Economy Overview · Q4 2025</p>
+  <div class="kpi-grid">
+    <div class="kpi g kpi-full">
+      <div class="kpi-lbl">Total Revenue — All Industries</div>
+      <div class="kpi-val" style="color:var(--green)">$211,576M</div>
+      <div class="kpi-sub">NZD · Sum of 26 NZSIOC Level 2 industries</div>
+      <div class="badge up">↑ +5.9% vs Q4 2024 ($199,883M)</div>
     </div>
-
-    <div class="kpi-row">
-        <div class="kpi-card blue" style="animation-delay:0.06s">
-            <div class="kpi-label">Utilidad Operativa</div>
-            <div class="kpi-value blue">$1,405M</div>
-            <div class="kpi-sub">Q4 2025</div>
-            <div class="kpi-trend trend-up">↑ +11.3%</div>
-        </div>
-        <div class="kpi-card purple" style="animation-delay:0.12s">
-            <div class="kpi-label">Salarios &amp; Nómina</div>
-            <div class="kpi-value" style="font-size:1.7rem">$2,479M</div>
-            <div class="kpi-sub">Q4 2025</div>
-            <div class="kpi-trend trend-down">↑ +7.6% costos</div>
-        </div>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi b">
+      <div class="kpi-lbl">Operating Profit</div>
+      <div class="kpi-val" style="color:var(--blue); font-size:1.6rem">$31,256M</div>
+      <div class="kpi-sub">Q4 2025</div>
+      <div class="badge up">↑ +12.6% YoY</div>
     </div>
-
-    <div class="kpi-row">
-        <div class="kpi-card orange" style="animation-delay:0.18s">
-            <div class="kpi-label">Gastos Op.</div>
-            <div class="kpi-value" style="font-size:1.6rem">$2,873M</div>
-            <div class="kpi-sub">Q4 2025</div>
-            <div class="kpi-trend trend-flat">→ +8.3%</div>
-        </div>
-        <div class="kpi-card green" style="animation-delay:0.24s">
-            <div class="kpi-label">Margen Neto</div>
-            <div class="kpi-value green" style="font-size:2rem">20.8%</div>
-            <div class="kpi-sub">$1,405M / $6,758M</div>
-            <div class="kpi-trend trend-up">↑ vs 20.3% Q4'24</div>
-        </div>
+    <div class="kpi g">
+      <div class="kpi-lbl">Avg. Profit Margin</div>
+      <div class="kpi-val" style="color:var(--green); font-size:1.9rem">14.8%</div>
+      <div class="kpi-sub">Q4 2025 (was 13.9% Q4'24)</div>
+      <div class="badge up">↑ +0.9 pp</div>
     </div>
-
-    <!-- Revenue vs Expenses Chart -->
-    <p class="section-label" style="margin-top:10px">Ingresos vs Gastos · 2024–2025</p>
-    <div class="chart-card">
-        <h3>Ingresos Operativos vs Egresos</h3>
-        <p class="chart-desc">Ventas, Gastos Op. y Nómina por trimestre (NZD Millones)</p>
-        <div class="chart-wrap">
-            <canvas id="revenueChart"></canvas>
-        </div>
-        <div class="summary-row">
-            <div class="summary-item">
-                <span class="s-label">Total 2025</span>
-                <span class="s-val" style="color:var(--green)">$27,509M</span>
-            </div>
-            <div class="summary-item">
-                <span class="s-label">Total 2024</span>
-                <span class="s-val" style="color:var(--blue)">$23,923M</span>
-            </div>
-            <div class="summary-item">
-                <span class="s-label">Crecimiento</span>
-                <span class="s-val" style="color:var(--yellow)">+15.0%</span>
-            </div>
-        </div>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi o">
+      <div class="kpi-lbl">Total Wages & Salaries</div>
+      <div class="kpi-val" style="font-size:1.55rem">$33,151M</div>
+      <div class="kpi-sub">Q4 2025</div>
+      <div class="badge flat">↑ +1.8% YoY</div>
     </div>
-
-    <!-- Operating Profit Chart -->
-    <p class="section-label">Utilidad Operativa por Trimestre</p>
-    <div class="chart-card">
-        <h3>Profit Trimestral · 2024 vs 2025</h3>
-        <p class="chart-desc">Comparativa de utilidad operativa año a año</p>
-        <div class="chart-wrap short">
-            <canvas id="profitChart"></canvas>
-        </div>
+    <div class="kpi p">
+      <div class="kpi-lbl">Op. Expenses</div>
+      <div class="kpi-val" style="font-size:1.55rem">$147,169M</div>
+      <div class="kpi-sub">Q4 2025</div>
+      <div class="badge flat">↑ +5.4% YoY</div>
     </div>
-
-    <!-- Funnel de Pacientes -->
-    <p class="section-label">Funnel de Atención · Pacientes Q4 2025</p>
-    <div class="chart-card">
-        <h3>Embudo de Conversión Clínica</h3>
-        <p class="chart-desc">Desde contacto inicial hasta tratamiento completado</p>
-        <div class="funnel-list" id="funnelList"></div>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi y">
+      <div class="kpi-lbl">Top Margin Industry</div>
+      <div class="kpi-val" style="color:var(--yellow); font-size:1.55rem">40.6%</div>
+      <div class="kpi-sub">Mining — Q4 2025</div>
+      <div class="badge up">Revenue $1,593M</div>
     </div>
-
-    <!-- Revenue Breakdown Donut -->
-    <p class="section-label">Distribución de Ingresos por Servicio</p>
-    <div class="chart-card">
-        <h3>Mix de Servicios · Q4 2025</h3>
-        <p class="chart-desc">Participación de cada línea de tratamiento en ingresos</p>
-        <div class="chart-wrap short">
-            <canvas id="mixChart"></canvas>
-        </div>
+    <div class="kpi g">
+      <div class="kpi-lbl">10-yr Growth Leader</div>
+      <div class="kpi-val" style="color:var(--green); font-size:1.55rem">+105.7%</div>
+      <div class="kpi-sub">Health Care (2016–2025)</div>
+      <div class="badge up">$3,286M → $6,758M</div>
     </div>
+  </div>
 
-    <!-- Top Procedimientos -->
-    <p class="section-label">Top Procedimientos por Ingreso</p>
-    <div class="chart-card">
-        <h3>Servicios de Mayor Rendimiento</h3>
-        <p class="chart-desc">Ranking por volumen de ingresos · Q4 2025</p>
-        <div class="proc-list" id="procList"></div>
+  <!-- Sales by Industry -->
+  <p class="sec">Revenue by Industry · Q4 2025 (NZD Millions)</p>
+  <div class="card">
+    <h3>Sales Ranking — All 26 Industries</h3>
+    <p>Operating income, current prices, unadjusted · sorted descending</p>
+    <div class="ch h380"><canvas id="salesChart"></canvas></div>
+  </div>
+
+  <!-- Profit Margin Ranking -->
+  <p class="sec">Profitability · Q4 2025</p>
+  <div class="card">
+    <h3>Operating Profit Margin — Industry Ranking</h3>
+    <p>Operating profit / Sales · Q4 2025 · current prices</p>
+    <div class="ch h300"><canvas id="marginChart"></canvas></div>
+  </div>
+
+  <!-- Quarterly Trend -->
+  <p class="sec">Quarterly Trend · Top 5 Industries by Revenue</p>
+  <div class="card">
+    <h3>Sales Trend Q1 2024 — Q4 2025</h3>
+    <p>8 quarters · NZD Millions · Unadjusted current prices</p>
+    <div class="ch h260"><canvas id="trendChart"></canvas></div>
+    <div class="stat-row">
+      <div class="stat"><span class="s-lbl">Wholesale Q4'25</span><span class="s-val" style="color:var(--green)">$43,002M</span></div>
+      <div class="stat"><span class="s-lbl">vs Q4'24</span><span class="s-val" style="color:var(--green)">+$3,158M</span></div>
+      <div class="stat"><span class="s-lbl">YoY Δ</span><span class="s-val" style="color:var(--green)">+7.9%</span></div>
     </div>
+  </div>
 
-    <!-- Tendencia histórica -->
-    <p class="section-label">Tendencia Histórica · Ventas 2016–2025</p>
-    <div class="chart-card">
-        <h3>Evolución de Ingresos del Sector</h3>
-        <p class="chart-desc">Health Care &amp; Social Assistance — Precios corrientes, Unadjusted</p>
-        <div class="chart-wrap tall">
-            <canvas id="historyChart"></canvas>
-        </div>
+  <!-- 10-Year Growth -->
+  <p class="sec">10-Year Growth · Q4 2016 → Q4 2025</p>
+  <div class="card">
+    <h3>Revenue Growth by Industry (2016 Baseline)</h3>
+    <p>Percentage change Q4 2016 vs Q4 2025 · current prices · sorted by growth</p>
+    <div class="ch h300"><canvas id="growthChart"></canvas></div>
+  </div>
+
+  <!-- P&L Breakdown Q4 2025 -->
+  <p class="sec">P&L Structure · Q4 2025</p>
+  <div class="card">
+    <h3>Revenue vs Cost Structure — Top 10 Industries</h3>
+    <p>Sales broken down into Expenses, Wages and Profit (NZD M)</p>
+    <div class="ch h260"><canvas id="plChart"></canvas></div>
+  </div>
+
+  <!-- Full Data Table -->
+  <p class="sec">Full Industry Detail · Q4 2025</p>
+  <div class="card">
+    <h3>All 26 Industries — Key Metrics</h3>
+    <p>Sales, Expenses, Wages, Profit, Margin · NZD Millions</p>
+    <div class="tbl-wrap">
+      <table class="ind-table" id="fullTable"></table>
     </div>
+  </div>
 
-    <p class="footer">Powered by DataPocket × KanbanPro · NZ BDC Q4 2025</p>
+  <p class="footer">Stats NZ · Business Data Collection Q4 2025 · NZSIOC Level 2 · Current Prices · Unadjusted</p>
 </div>
 
 <!-- Bottom Nav -->
-<nav class="bottom-nav">
-    <button class="nav-btn active" aria-label="Dashboard">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-            <rect x="14" y="14" width="7" height="7" rx="1.5"/>
-        </svg>
-        Dashboard
-    </button>
-    <button class="nav-btn" aria-label="Pacientes" onclick="">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-        Pacientes
-    </button>
-    <button class="nav-btn" aria-label="Citas" onclick="">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-        Citas
-    </button>
-    <button class="nav-btn" aria-label="Actualizar" onclick="location.reload()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M1 4v6h6"/>
-            <path d="M23 20v-6h-6"/>
-            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
-        </svg>
-        Refresh
-    </button>
-    <button class="nav-btn" aria-label="Config">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.32 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-        Config
-    </button>
+<nav class="bnav">
+  <button class="nb active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+      <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+    </svg>Overview
+  </button>
+  <button class="nb">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+      <line x1="6" y1="20" x2="6" y2="14"/>
+    </svg>Industries
+  </button>
+  <button class="nb">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+    </svg>Trends
+  </button>
+  <button class="nb" onclick="location.reload()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
+      <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+    </svg>Refresh
+  </button>
 </nav>
 
 <script>
-// ── Chart defaults ──────────────────────────────────────────────
-const C = {
-    text:    '#eef0ff',
-    muted:   '#8888aa',
-    grid:    'rgba(58,58,85,0.6)',
-    green:   '#39ff8e',
-    blue:    '#5bc8fc',
-    purple:  '#a78bfa',
-    orange:  '#fb923c',
-    yellow:  '#facc15',
-    red:     '#f87171',
-};
+// ── Real data extracted from CSV ─────────────────────────────────────────────
+// Source: business-financial-data-december-2025-quarter.csv
+// Filter: NZSIOC Level 2 | Current prices | Unadjusted | Q4 2025
+
+const industries = [
+  // [name, sales, expenses, wages, profit]
+  // Sorted by sales descending
+  ['Wholesale Trade',                    43002, 37024, 2664, 3314],
+  ['Retail Trade',                       28194, 23152, 2953, 2089],
+  ['Construction',                       23859, 16524, 4353, 2982],
+  ['Food, Bev. & Tobacco Mfg.',          19955, 16080, 2023, 1853],
+  ['Professional & Scientific Svcs.',    15815,  7140, 4978, 3697],
+  ['Transport, Postal & Warehousing',    11490,  6713, 2359, 2418],
+  ['Rental & Real Estate Svcs.',         10064,  5469,  681, 3914],
+  ['Health Care & Social Assistance',     6758,  2873, 2479, 1406],
+  ['Electricity, Gas, Water & Waste',     6077,  3568,  689, 1820],
+  ['Accommodation & Food Services',       6038,  3596, 1713,  730],
+  ['Administrative & Support Svcs.',      5846,  3173, 1541, 1133],
+  ['Info. Media & Telecoms.',             5259,  3043,  730, 1487],
+  ['Transport Equipment Mfg.',            4897,  3195, 1076,  626],
+  ['Metal Product Manufacturing',         3551,  2612,  664,  274],
+  ['Other Services',                      3536,  2321, 1009,  206],
+  ['Petroleum & Chemical Mfg.',           3293,  2294,  464,  535],
+  ['Fishing, Aquaculture & Agri.',        2808,  1750,  542,  516],
+  ['Wood & Paper Products Mfg.',          2480,  1842,  443,  195],
+  ['Arts & Recreation Services',          1837,   941,  367,  529],
+  ['Mining',                              1593,   706,  239,  647],
+  ['Forestry & Logging',                  1404,  1074,  108,  222],
+  ['Education & Training',                1179,   382,  495,  302],
+  ['Non-Metallic Mineral Mfg.',           1076,   710,  199,  168],
+  ['Furniture & Other Mfg.',               682,   435,  164,   83],
+  ['Textile, Leather & Clothing',          497,   323,  122,   52],
+  ['Printing',                             385,   229,   98,   59],
+];
+
+// Quarterly Sales — Q1'24 to Q4'25 (top 5 by revenue)
+const qLabels = ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25"];
+const topTrend = [
+  { label:'Wholesale Trade',             color:'#39ff8e', data:[35978,37289,37677,39844,36770,38655,40519,43002] },
+  { label:'Retail Trade',                color:'#5bc8fc', data:[24334,23832,23552,26849,24658,24392,24673,28194] },
+  { label:'Construction',                color:'#a78bfa', data:[22114,24673,23882,23546,21318,22907,23139,23859] },
+  { label:'Food, Bev. & Tobacco Mfg.',   color:'#fb923c', data:[16510,16582,13984,19384,19478,18209,15683,19955] },
+  { label:'Professional & Scientific',   color:'#facc15', data:[13409,15183,14981,14960,13846,15509,15933,15815] },
+];
+
+// 10-year growth Q4 2016 → Q4 2025 (real CSV values)
+const growth10 = [
+  { label:'Health Care & Social Assist.', v16:3286,  v25:6758  },
+  { label:'Fishing, Aquaculture & Agri.', v16:1391,  v25:2808  },
+  { label:'Professional & Scientific',    v16:8899,  v25:15815 },
+  { label:'Transport Equipment Mfg.',     v16:2860,  v25:4897  },
+  { label:'Wholesale Trade',              v16:25705, v25:43002 },
+  { label:'Education & Training',         v16:712,   v25:1179  },
+  { label:'Food, Bev. & Tobacco Mfg.',    v16:12084, v25:19955 },
+  { label:'Construction',                 v16:14478, v25:23859 },
+  { label:'Transport & Warehousing',      v16:7643,  v25:11490 },
+  { label:'Rental & Real Estate',         v16:7496,  v25:10064 },
+  { label:'Forestry & Logging',           v16:1054,  v25:1404  },
+  { label:'Textile, Leather & Clothing',  v16:572,   v25:497   },
+  { label:'Printing',                     v16:439,   v25:385   },
+  { label:'Petroleum & Chemical Mfg.',    v16:4576,  v25:3293  },
+].map(d => ({ ...d, pct: +((d.v25/d.v16-1)*100).toFixed(1) }))
+ .sort((a,b) => a.pct - b.pct);  // ascending so chart reads top-to-bottom
+
+// ── Chart config defaults ────────────────────────────────────────────────────
+const C = { text:'#eef0ff', muted:'#8888aa', grid:'rgba(58,58,85,0.55)',
+            green:'#39ff8e', blue:'#5bc8fc', purple:'#a78bfa',
+            orange:'#fb923c', yellow:'#facc15', red:'#f87171' };
 Chart.defaults.color = C.muted;
 Chart.defaults.font.family = "'DM Sans', system-ui, sans-serif";
 
-// ── Source data from CSV (Health Care & Social Assistance, NZD M, Unadjusted) ──
-const quarters = ['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25'];
+const scaleOpts = (axis) => ({
+  [axis]: { ticks:{ color:C.muted, font:{size:10} }, grid:{color:C.grid} }
+});
 
-const sales    = [5688.764, 5824.833, 6191.572, 6218.566, 5919.839, 6153.327, 6677.935, 6758.246];
-const expenses = [2456.004, 2645.778, 2738.322, 2652.964, 2514.693, 2756.131, 2897.803, 2873.415];
-const wages    = [2191.702, 2180.044, 2194.014, 2303.084, 2183.920, 2350.688, 2386.005, 2479.122];
-const profit   = [1041.058,  999.010, 1259.236, 1262.517, 1221.225, 1046.508, 1394.127, 1405.709];
-
-// ── Historical Sales (2016–2025, Q4 only for brevity + full year 2025) ──
-const historyLabels = [
-    'Q4\'16','Q4\'17','Q4\'18','Q4\'19','Q4\'20',
-    'Q4\'21','Q4\'22','Q4\'23','Q4\'24','Q4\'25'
-];
-const historySales = [3286.048, 3423.368, 3756.251, 4154.182, 4562.150,
-                      5060.725, 5181.425, 5714.090, 6218.566, 6758.246];
-
-// ── Chart: Revenue vs Expenses ──────────────────────────────────
-new Chart(document.getElementById('revenueChart'), {
-    type: 'bar',
-    data: {
-        labels: quarters,
-        datasets: [
-            {
-                label: 'Ventas',
-                data: sales,
-                backgroundColor: `${C.green}33`,
-                borderColor: C.green,
-                borderWidth: 2,
-                borderRadius: 6,
-                order: 2,
-            },
-            {
-                label: 'Gastos Op.',
-                data: expenses,
-                backgroundColor: `${C.orange}33`,
-                borderColor: C.orange,
-                borderWidth: 2,
-                borderRadius: 6,
-                order: 2,
-            },
-            {
-                label: 'Salarios',
-                data: wages,
-                backgroundColor: `${C.purple}33`,
-                borderColor: C.purple,
-                borderWidth: 2,
-                borderRadius: 6,
-                order: 2,
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-            legend: {
-                display: true,
-                position: 'top',
-                labels: { color: C.text, font: { size: 11 }, padding: 12, boxWidth: 12 }
-            },
-            tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString('es',{maximumFractionDigits:0})}M` } }
-        },
-        scales: {
-            x: {
-                ticks: { color: C.muted, font: { size: 10 } },
-                grid: { color: C.grid }
-            },
-            y: {
-                ticks: { color: C.muted, font: { size: 10 }, callback: v => `$${(v/1000).toFixed(1)}B` },
-                grid: { color: C.grid }
-            }
-        }
+// ── 1. Sales by Industry (horizontal bar) ───────────────────────────────────
+new Chart(document.getElementById('salesChart'), {
+  type:'bar',
+  data:{
+    labels: industries.map(d => d[0]),
+    datasets:[{
+      data: industries.map(d => d[1]),
+      backgroundColor: industries.map((_, i) => i < 5 ? `${C.green}55` : `${C.blue}33`),
+      borderColor:     industries.map((_, i) => i < 5 ? C.green : C.blue),
+      borderWidth:1.5, borderRadius:4,
+    }]
+  },
+  options:{
+    indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false},
+              tooltip:{ callbacks:{ label: ctx => ` $${ctx.parsed.x.toLocaleString('en')}M NZD` } } },
+    scales:{
+      x:{ ticks:{ color:C.muted, font:{size:10}, callback: v=>`$${(v/1000).toFixed(0)}B` }, grid:{color:C.grid} },
+      y:{ ticks:{ color:C.text, font:{size:10} }, grid:{display:false} }
     }
+  }
 });
 
-// ── Chart: Profit 2024 vs 2025 ──────────────────────────────────
-new Chart(document.getElementById('profitChart'), {
-    type: 'bar',
-    data: {
-        labels: ['Q1','Q2','Q3','Q4'],
-        datasets: [
-            {
-                label: '2024',
-                data: profit.slice(0,4),
-                backgroundColor: `${C.blue}55`,
-                borderColor: C.blue,
-                borderWidth: 2,
-                borderRadius: 5,
-            },
-            {
-                label: '2025',
-                data: profit.slice(4),
-                backgroundColor: `${C.green}55`,
-                borderColor: C.green,
-                borderWidth: 2,
-                borderRadius: 5,
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-            legend: {
-                display: true,
-                position: 'top',
-                labels: { color: C.text, font: { size: 11 }, padding: 12, boxWidth: 12 }
-            },
-            tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString('es',{maximumFractionDigits:0})}M` } }
-        },
-        scales: {
-            x: { ticks: { color: C.muted, font: { size: 11 } }, grid: { color: C.grid } },
-            y: {
-                ticks: { color: C.muted, font: { size: 10 }, callback: v => `$${(v/1000).toFixed(2)}B` },
-                grid: { color: C.grid }
-            }
-        }
+// ── 2. Profit Margin (horizontal bar, sorted by margin) ──────────────────────
+const byMargin = industries
+  .map(d => ({ name:d[0], margin:+(d[4]/d[1]*100).toFixed(1) }))
+  .sort((a,b) => a.margin - b.margin);
+
+new Chart(document.getElementById('marginChart'), {
+  type:'bar',
+  data:{
+    labels: byMargin.map(d => d.name),
+    datasets:[{
+      data: byMargin.map(d => d.margin),
+      backgroundColor: byMargin.map(d =>
+        d.margin >= 30 ? `${C.green}66` :
+        d.margin >= 15 ? `${C.blue}55`  :
+        d.margin >= 8  ? `${C.yellow}55`: `${C.red}55`
+      ),
+      borderColor: byMargin.map(d =>
+        d.margin >= 30 ? C.green :
+        d.margin >= 15 ? C.blue  :
+        d.margin >= 8  ? C.yellow: C.red
+      ),
+      borderWidth:1.5, borderRadius:4,
+    }]
+  },
+  options:{
+    indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false},
+              tooltip:{ callbacks:{ label: ctx => ` ${ctx.parsed.x.toFixed(1)}% margin` } } },
+    scales:{
+      x:{ ticks:{ color:C.muted, font:{size:10}, callback: v=>`${v}%` }, grid:{color:C.grid} },
+      y:{ ticks:{ color:C.text, font:{size:9} }, grid:{display:false} }
     }
+  }
 });
 
-// ── Funnel de Pacientes ─────────────────────────────────────────
-const funnelData = [
-    { name: 'Leads / Consultas recibidas', count: 1840, pct: 100, color: C.blue   },
-    { name: 'Citas agendadas',              count: 1243, pct:  67, color: C.purple },
-    { name: 'Pacientes atendidos',          count:  988, pct:  54, color: C.green  },
-    { name: 'Tratamientos iniciados',       count:  712, pct:  39, color: C.yellow },
-    { name: 'Tratamientos completados',     count:  504, pct:  27, color: C.orange },
-    { name: 'Recurrentes / Fidelizados',    count:  318, pct:  17, color: C.red    },
-];
-
-const funnelEl = document.getElementById('funnelList');
-funnelData.forEach(f => {
-    funnelEl.innerHTML += `
-    <div class="funnel-row">
-        <div class="funnel-meta">
-            <span class="funnel-name">${f.name}</span>
-            <span class="funnel-count">${f.count.toLocaleString('es')} · ${f.pct}%</span>
-        </div>
-        <div class="funnel-track">
-            <div class="funnel-fill" style="width:${f.pct}%;background:${f.color}"></div>
-        </div>
-    </div>`;
-});
-
-// ── Mix de Servicios ────────────────────────────────────────────
-new Chart(document.getElementById('mixChart'), {
-    type: 'doughnut',
-    data: {
-        labels: ['Odontología Gral.','Ortodoncia','Endodoncia','Cirugía Oral','Blanqueamiento','Implantes','Otros'],
-        datasets: [{
-            data: [28, 22, 16, 12, 9, 8, 5],
-            backgroundColor: [
-                `${C.blue}cc`,`${C.green}cc`,`${C.purple}cc`,
-                `${C.orange}cc`,`${C.yellow}cc`,`${C.red}cc`,'#64748bcc'
-            ],
-            borderWidth: 0,
-            hoverOffset: 6,
-        }]
+// ── 3. Quarterly trend top 5 ─────────────────────────────────────────────────
+new Chart(document.getElementById('trendChart'), {
+  type:'line',
+  data:{
+    labels: qLabels,
+    datasets: topTrend.map(d => ({
+      label: d.label,
+      data: d.data,
+      borderColor: d.color,
+      backgroundColor: d.color + '12',
+      fill:false, tension:.35,
+      pointRadius:3, pointHoverRadius:6,
+      pointBackgroundColor: d.color,
+      borderWidth:2,
+    }))
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    interaction:{ mode:'index', intersect:false },
+    plugins:{
+      legend:{ display:true, position:'bottom', labels:{ color:C.text, font:{size:10}, padding:10, boxWidth:10 } },
+      tooltip:{ callbacks:{ label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString('en')}M` } }
     },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '62%',
-        plugins: {
-            legend: {
-                display: true,
-                position: 'bottom',
-                labels: { color: C.text, font: { size: 10 }, padding: 8, boxWidth: 10 }
-            },
-            tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` } }
-        }
+    scales:{
+      x:{ ticks:{ color:C.muted, font:{size:10} }, grid:{color:C.grid} },
+      y:{ ticks:{ color:C.muted, font:{size:10}, callback: v=>`$${(v/1000).toFixed(0)}B` }, grid:{color:C.grid} }
     }
+  }
 });
 
-// ── Top Procedimientos ──────────────────────────────────────────
-const procedures = [
-    { icon: '🦷', name: 'Implantes Dentales', volume: '84 tratamientos', revenue: '$2,143M', color: '#39ff8e18' },
-    { icon: '😁', name: 'Ortodoncia Invisible', volume: '213 pacientes',  revenue: '$1,487M', color: '#5bc8fc18' },
-    { icon: '🔬', name: 'Endodoncia Avanzada',  volume: '156 casos',      revenue: '$890M',   color: '#a78bfa18' },
-    { icon: '✨', name: 'Blanqueamiento Láser', volume: '312 sesiones',   revenue: '$608M',   color: '#facc1518' },
-    { icon: '🏥', name: 'Cirugía Oral',         volume: '98 cirugías',    revenue: '$811M',   color: '#fb923c18' },
-];
-
-const procEl = document.getElementById('procList');
-procedures.forEach(p => {
-    procEl.innerHTML += `
-    <div class="proc-item">
-        <div class="proc-icon" style="background:${p.color}">${p.icon}</div>
-        <div class="proc-info">
-            <div class="proc-name">${p.name}</div>
-            <div class="proc-volume">${p.volume}</div>
-        </div>
-        <div class="proc-revenue">${p.revenue}</div>
-    </div>`;
+// ── 4. 10-year growth chart ──────────────────────────────────────────────────
+new Chart(document.getElementById('growthChart'), {
+  type:'bar',
+  data:{
+    labels: growth10.map(d => d.label),
+    datasets:[{
+      label:'Growth 2016→2025',
+      data: growth10.map(d => d.pct),
+      backgroundColor: growth10.map(d => d.pct >= 0 ? `${C.green}55` : `${C.red}55`),
+      borderColor:     growth10.map(d => d.pct >= 0 ? C.green : C.red),
+      borderWidth:1.5, borderRadius:4,
+    }]
+  },
+  options:{
+    indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false},
+              tooltip:{ callbacks:{ label: ctx => ` ${ctx.parsed.x.toFixed(1)}%` } } },
+    scales:{
+      x:{ ticks:{ color:C.muted, font:{size:10}, callback: v=>`${v}%` }, grid:{color:C.grid} },
+      y:{ ticks:{ color:C.text, font:{size:9} }, grid:{display:false} }
+    }
+  }
 });
 
-// ── Historical trend ────────────────────────────────────────────
-new Chart(document.getElementById('historyChart'), {
-    type: 'line',
-    data: {
-        labels: historyLabels,
-        datasets: [{
-            label: 'Ventas (NZD M)',
-            data: historySales,
-            borderColor: C.blue,
-            backgroundColor: `${C.blue}18`,
-            fill: true,
-            tension: 0.4,
-            pointRadius: 5,
-            pointHoverRadius: 8,
-            pointBackgroundColor: C.blue,
-            pointBorderColor: '#1e1e2f',
-            pointBorderWidth: 2,
-            borderWidth: 2.5,
-        }]
+// ── 5. P&L stacked bar top 10 ────────────────────────────────────────────────
+const top10 = industries.slice(0,10);
+new Chart(document.getElementById('plChart'), {
+  type:'bar',
+  data:{
+    labels: top10.map(d => d[0].split(' ').slice(0,2).join(' ')),
+    datasets:[
+      { label:'Op. Expenses', data:top10.map(d=>d[2]), backgroundColor:`${C.red}55`,    borderColor:C.red,    borderWidth:1, borderRadius:{topLeft:0,topRight:0} },
+      { label:'Wages',        data:top10.map(d=>d[3]), backgroundColor:`${C.orange}55`, borderColor:C.orange, borderWidth:1 },
+      { label:'Profit',       data:top10.map(d=>d[4]), backgroundColor:`${C.green}55`,  borderColor:C.green,  borderWidth:1, borderRadius:{topLeft:4,topRight:4} },
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    interaction:{ mode:'index', intersect:false },
+    plugins:{
+      legend:{ display:true, position:'top', labels:{ color:C.text, font:{size:10}, padding:10, boxWidth:10 } },
+      tooltip:{ callbacks:{ label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString('en')}M` } }
     },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: ctx => ` $${ctx.parsed.y.toLocaleString('es',{maximumFractionDigits:0})}M` } }
-        },
-        scales: {
-            x: { ticks: { color: C.muted, font: { size: 10 } }, grid: { color: C.grid } },
-            y: {
-                ticks: { color: C.muted, font: { size: 10 }, callback: v => `$${(v/1000).toFixed(1)}B` },
-                grid: { color: C.grid }
-            }
-        }
+    scales:{
+      x:{ stacked:true, ticks:{ color:C.muted, font:{size:9}, maxRotation:45 }, grid:{color:C.grid} },
+      y:{ stacked:true, ticks:{ color:C.muted, font:{size:10}, callback: v=>`$${(v/1000).toFixed(0)}B` }, grid:{color:C.grid} }
     }
+  }
 });
 
-// ── Filter tabs (switch chart data) ────────────────────────────
-document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        // Future: swap dataset on period selection
-    });
+// ── 6. Full table ─────────────────────────────────────────────────────────────
+const tbl = document.getElementById('fullTable');
+tbl.innerHTML = `<thead><tr>
+  <th>Industry</th><th>Sales</th><th>Expenses</th><th>Wages</th><th>Profit</th><th>Margin</th>
+</tr></thead>`;
+const tbody = document.createElement('tbody');
+industries.forEach(d => {
+  const margin = (d[4]/d[1]*100).toFixed(1);
+  const cls = margin >= 25 ? 'm-pos' : margin >= 10 ? 'm-mid' : 'm-neg';
+  tbody.innerHTML += `<tr>
+    <td>${d[0]}</td>
+    <td>${d[1].toLocaleString('en')}</td>
+    <td style="color:var(--muted)">${d[2].toLocaleString('en')}</td>
+    <td style="color:var(--muted)">${d[3].toLocaleString('en')}</td>
+    <td style="color:var(--blue)">${d[4].toLocaleString('en')}</td>
+    <td class="${cls}">${margin}%</td>
+  </tr>`;
 });
+tbl.appendChild(tbody);
 </script>
 </body>
 </html>
