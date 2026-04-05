@@ -1,0 +1,4 @@
+{"evento": "login", "usuario": "user_001", "timestamp": "2026-01-15T08:30:00", "duracion_seg": 120}
+{"evento": "compra", "usuario": "user_001", "timestamp": "2026-01-15T09:15:00", "duracion_seg": 45}
+{"evento": "login", "usuario": "user_002", "timestamp": "2026-01-15T10:00:00", "duracion_seg": 90}
+{"evento": "logout", "usuario": "user_001", "timestamp": "2026-01-15T11:30:00", "duracion_seg": 5}

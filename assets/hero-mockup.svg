@@ -1,0 +1,327 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0e1a"/>
+      <stop offset="100%" style="stop-color:#131830"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#38bdf8"/>
+      <stop offset="100%" style="stop-color:#a78bfa"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#34d399"/>
+      <stop offset="100%" style="stop-color:#059669"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+    <clipPath id="screenClip">
+      <rect x="88" y="58" width="224" height="484" rx="4"/>
+    </clipPath>
+    <clipPath id="screenClip2">
+      <rect x="488" y="58" width="224" height="484" rx="4"/>
+    </clipPath>
+    <clipPath id="screenClip3">
+      <rect x="888" y="58" width="224" height="484" rx="4"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="700" fill="url(#bg)"/>
+  
+  <!-- Subtle grid pattern -->
+  <g opacity="0.03">
+    <line x1="0" y1="0" x2="0" y2="700" stroke="#fff" stroke-width="1" transform="translate(60,0)"/>
+    <line x1="0" y1="0" x2="0" y2="700" stroke="#fff" stroke-width="1" transform="translate(120,0)"/>
+    <line x1="0" y1="0" x2="0" y2="700" stroke="#fff" stroke-width="1" transform="translate(180,0)"/>
+    <line x1="0" y1="0" x2="0" y2="700" stroke="#fff" stroke-width="1" transform="translate(240,0)"/>
+    <line x1="0" y1="0" x2="1200" y2="0" stroke="#fff" stroke-width="1" transform="translate(0,100)"/>
+    <line x1="0" y1="0" x2="1200" y2="0" stroke="#fff" stroke-width="1" transform="translate(0,200)"/>
+    <line x1="0" y1="0" x2="1200" y2="0" stroke="#fff" stroke-width="1" transform="translate(0,300)"/>
+  </g>
+
+  <!-- ═══════ PHONE 1: CSV Upload → Dashboard ═══════ -->
+  <g filter="url(#shadow)">
+    <!-- Phone frame -->
+    <rect x="75" y="30" width="250" height="520" rx="24" fill="#1a1a2e" stroke="#333" stroke-width="2"/>
+    <!-- Notch -->
+    <rect x="165" y="36" width="70" height="6" rx="3" fill="#333"/>
+    <!-- Screen -->
+    <g clip-path="url(#screenClip)">
+      <rect x="88" y="58" width="224" height="484" fill="#0f172a"/>
+      
+      <!-- Dashboard header -->
+      <rect x="88" y="58" width="224" height="52" fill="#1e293b"/>
+      <text x="200" y="82" text-anchor="middle" fill="#e2e8f0" font-family="system-ui" font-size="11" font-weight="700">📊 Ventas Q1 2026</text>
+      <text x="200" y="96" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="7">Powered by DataPocket</text>
+      
+      <!-- KPI Row -->
+      <rect x="94" y="116" width="104" height="60" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="146" y="134" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="6.5" text-transform="uppercase">INGRESOS</text>
+      <text x="146" y="153" text-anchor="middle" fill="#38bdf8" font-family="system-ui" font-size="16" font-weight="700">$48.2M</text>
+      <text x="146" y="166" text-anchor="middle" fill="#34d399" font-family="system-ui" font-size="7" font-weight="600">↑ 23.5%</text>
+      
+      <rect x="202" y="116" width="104" height="60" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="254" y="134" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="6.5">CLIENTES</text>
+      <text x="254" y="153" text-anchor="middle" fill="#a78bfa" font-family="system-ui" font-size="16" font-weight="700">1,247</text>
+      <text x="254" y="166" text-anchor="middle" fill="#34d399" font-family="system-ui" font-size="7" font-weight="600">↑ 12.1%</text>
+      
+      <!-- Bar chart -->
+      <rect x="94" y="184" width="212" height="120" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="104" y="200" fill="#64748b" font-family="system-ui" font-size="6.5">VENTAS POR MES</text>
+      
+      <!-- Bars -->
+      <rect x="112" y="248" width="20" height="40" rx="3" fill="#38bdf888" stroke="#38bdf8" stroke-width="0.5"/>
+      <rect x="140" y="232" width="20" height="56" rx="3" fill="#38bdf888" stroke="#38bdf8" stroke-width="0.5"/>
+      <rect x="168" y="220" width="20" height="68" rx="3" fill="#38bdf888" stroke="#38bdf8" stroke-width="0.5"/>
+      <rect x="196" y="240" width="20" height="48" rx="3" fill="#a78bfa88" stroke="#a78bfa" stroke-width="0.5"/>
+      <rect x="224" y="215" width="20" height="73" rx="3" fill="#34d39988" stroke="#34d399" stroke-width="0.5"/>
+      <rect x="252" y="208" width="20" height="80" rx="3" fill="#34d39988" stroke="#34d399" stroke-width="0.5"/>
+      
+      <!-- Labels -->
+      <text x="122" y="298" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="5.5">Ene</text>
+      <text x="150" y="298" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="5.5">Feb</text>
+      <text x="178" y="298" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="5.5">Mar</text>
+      <text x="206" y="298" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="5.5">Abr</text>
+      <text x="234" y="298" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="5.5">May</text>
+      <text x="262" y="298" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="5.5">Jun</text>
+      
+      <!-- Donut chart -->
+      <rect x="94" y="312" width="104" height="100" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="104" y="328" fill="#64748b" font-family="system-ui" font-size="6.5">POR REGIÓN</text>
+      <circle cx="146" cy="372" r="28" fill="none" stroke="#38bdf8" stroke-width="8" stroke-dasharray="60 116" stroke-dashoffset="0"/>
+      <circle cx="146" cy="372" r="28" fill="none" stroke="#a78bfa" stroke-width="8" stroke-dasharray="40 136" stroke-dashoffset="-60"/>
+      <circle cx="146" cy="372" r="28" fill="none" stroke="#34d399" stroke-width="8" stroke-dasharray="30 146" stroke-dashoffset="-100"/>
+      <circle cx="146" cy="372" r="28" fill="none" stroke="#fb923c" stroke-width="8" stroke-dasharray="46 130" stroke-dashoffset="-130"/>
+      
+      <!-- Line chart mini -->
+      <rect x="202" y="312" width="104" height="100" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="212" y="328" fill="#64748b" font-family="system-ui" font-size="6.5">TENDENCIA</text>
+      <polyline points="215,395 230,385 245,388 260,370 275,365 290,350" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
+      <polyline points="215,395 230,385 245,388 260,370 275,365 290,350" fill="none" stroke="#38bdf833" stroke-width="0" fill="url(#accent)" opacity="0.15"/>
+      <circle cx="290" cy="350" r="2.5" fill="#38bdf8"/>
+      
+      <!-- Table preview -->
+      <rect x="94" y="420" width="212" height="80" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="104" y="436" fill="#64748b" font-family="system-ui" font-size="6.5">TOP PRODUCTOS</text>
+      <line x1="94" y1="442" x2="306" y2="442" stroke="#334155" stroke-width="0.5"/>
+      <text x="104" y="454" fill="#94a3b8" font-family="system-ui" font-size="6">Producto A</text>
+      <text x="280" y="454" text-anchor="end" fill="#38bdf8" font-family="system-ui" font-size="6" font-weight="600">$12.4M</text>
+      <text x="104" y="468" fill="#94a3b8" font-family="system-ui" font-size="6">Producto B</text>
+      <text x="280" y="468" text-anchor="end" fill="#a78bfa" font-family="system-ui" font-size="6" font-weight="600">$9.8M</text>
+      <text x="104" y="482" fill="#94a3b8" font-family="system-ui" font-size="6">Producto C</text>
+      <text x="280" y="482" text-anchor="end" fill="#34d399" font-family="system-ui" font-size="6" font-weight="600">$7.2M</text>
+      
+      <!-- Bottom bar -->
+      <rect x="88" y="510" width="224" height="32" fill="#1e293b"/>
+      <text x="130" y="530" text-anchor="middle" fill="#38bdf8" font-family="system-ui" font-size="6.5" font-weight="600">Dashboard</text>
+      <text x="200" y="530" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="6.5">Refresh</text>
+      <text x="270" y="530" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="6.5">Config</text>
+    </g>
+    <!-- Home indicator -->
+    <rect x="175" y="538" width="50" height="4" rx="2" fill="#444"/>
+  </g>
+
+  <!-- Step label 1 -->
+  <text x="200" y="580" text-anchor="middle" fill="#e2e8f0" font-family="system-ui" font-size="13" font-weight="700">PASO 1</text>
+  <text x="200" y="598" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="9.5">Sube tu CSV / Excel / JSON</text>
+  <text x="200" y="612" text-anchor="middle" fill="#38bdf8" font-family="system-ui" font-size="9.5" font-weight="600">→ Dashboard automático</text>
+
+  <!-- ═══════ PHONE 2: Financial Intelligence ═══════ -->
+  <g filter="url(#shadow)">
+    <rect x="475" y="30" width="250" height="520" rx="24" fill="#1a1a2e" stroke="#333" stroke-width="2"/>
+    <rect x="565" y="36" width="70" height="6" rx="3" fill="#333"/>
+    <g clip-path="url(#screenClip2)">
+      <rect x="488" y="58" width="224" height="484" fill="#0f172a"/>
+      
+      <!-- Header -->
+      <rect x="488" y="58" width="224" height="52" fill="#1e293b"/>
+      <text x="600" y="82" text-anchor="middle" fill="#e2e8f0" font-family="system-ui" font-size="11" font-weight="700">💰 Inteligencia Financiera</text>
+      <text x="600" y="96" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="7">Mi Portafolio Personal</text>
+      
+      <!-- Big KPI -->
+      <rect x="494" y="116" width="212" height="70" rx="10" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="600" y="136" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="7">PATRIMONIO NETO</text>
+      <text x="600" y="163" text-anchor="middle" fill="#34d399" font-family="system-ui" font-size="24" font-weight="700">$127,450</text>
+      <text x="600" y="178" text-anchor="middle" fill="#34d399" font-family="system-ui" font-size="8" font-weight="600">↑ $4,230 este mes (+3.4%)</text>
+      
+      <!-- Asset allocation donut -->
+      <rect x="494" y="194" width="104" height="110" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="504" y="210" fill="#64748b" font-family="system-ui" font-size="6.5">DISTRIBUCIÓN</text>
+      <circle cx="546" cy="260" r="30" fill="none" stroke="#38bdf8" stroke-width="9" stroke-dasharray="75 114" stroke-dashoffset="0"/>
+      <circle cx="546" cy="260" r="30" fill="none" stroke="#facc15" stroke-width="9" stroke-dasharray="45 144" stroke-dashoffset="-75"/>
+      <circle cx="546" cy="260" r="30" fill="none" stroke="#a78bfa" stroke-width="9" stroke-dasharray="30 159" stroke-dashoffset="-120"/>
+      <circle cx="546" cy="260" r="30" fill="none" stroke="#34d399" stroke-width="9" stroke-dasharray="39 150" stroke-dashoffset="-150"/>
+      <text x="546" y="258" text-anchor="middle" fill="#e2e8f0" font-family="system-ui" font-size="8" font-weight="700">4</text>
+      <text x="546" y="268" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="5.5">activos</text>
+      
+      <!-- Income vs Expenses -->
+      <rect x="602" y="194" width="104" height="110" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="612" y="210" fill="#64748b" font-family="system-ui" font-size="6.5">FLUJO DE CAJA</text>
+      <!-- Stacked bars income vs expense -->
+      <rect x="618" y="240" width="14" height="48" rx="2" fill="#34d39988" stroke="#34d399" stroke-width="0.5"/>
+      <rect x="618" y="258" width="14" height="30" rx="2" fill="#f8717188" stroke="#f87171" stroke-width="0.5"/>
+      <rect x="640" y="235" width="14" height="53" rx="2" fill="#34d39988" stroke="#34d399" stroke-width="0.5"/>
+      <rect x="640" y="260" width="14" height="28" rx="2" fill="#f8717188" stroke="#f87171" stroke-width="0.5"/>
+      <rect x="662" y="228" width="14" height="60" rx="2" fill="#34d39988" stroke="#34d399" stroke-width="0.5"/>
+      <rect x="662" y="255" width="14" height="33" rx="2" fill="#f8717188" stroke="#f87171" stroke-width="0.5"/>
+      <rect x="684" y="232" width="14" height="56" rx="2" fill="#34d39988" stroke="#34d399" stroke-width="0.5"/>
+      <rect x="684" y="262" width="14" height="26" rx="2" fill="#f8717188" stroke="#f87171" stroke-width="0.5"/>
+      <text x="625" y="298" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="5">Ene</text>
+      <text x="647" y="298" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="5">Feb</text>
+      <text x="669" y="298" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="5">Mar</text>
+      <text x="691" y="298" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="5">Abr</text>
+      
+      <!-- Savings rate -->
+      <rect x="494" y="312" width="212" height="55" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="504" y="328" fill="#64748b" font-family="system-ui" font-size="6.5">TASA DE AHORRO</text>
+      <!-- Progress bar -->
+      <rect x="504" y="338" width="192" height="8" rx="4" fill="#334155"/>
+      <rect x="504" y="338" width="134" height="8" rx="4" fill="url(#greenGrad)"/>
+      <text x="504" y="358" fill="#34d399" font-family="system-ui" font-size="9" font-weight="700">42%</text>
+      <text x="560" y="358" fill="#64748b" font-family="system-ui" font-size="7">Meta: 50%</text>
+      
+      <!-- Investment performance -->
+      <rect x="494" y="375" width="212" height="90" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="504" y="391" fill="#64748b" font-family="system-ui" font-size="6.5">RENDIMIENTO INVERSIONES</text>
+      <line x1="494" y1="398" x2="706" y2="398" stroke="#334155" stroke-width="0.5"/>
+      
+      <rect x="504" y="404" width="6" height="6" rx="1" fill="#38bdf8"/>
+      <text x="516" y="410" fill="#94a3b8" font-family="system-ui" font-size="6.5">VOO</text>
+      <text x="660" y="410" fill="#34d399" font-family="system-ui" font-size="6.5" font-weight="600" text-anchor="end">+18.4%</text>
+      <text x="694" y="410" fill="#64748b" font-family="system-ui" font-size="6" text-anchor="end">$52,300</text>
+      
+      <rect x="504" y="420" width="6" height="6" rx="1" fill="#facc15"/>
+      <text x="516" y="426" fill="#94a3b8" font-family="system-ui" font-size="6.5">GLD</text>
+      <text x="660" y="426" fill="#34d399" font-family="system-ui" font-size="6.5" font-weight="600" text-anchor="end">+12.1%</text>
+      <text x="694" y="426" fill="#64748b" font-family="system-ui" font-size="6" text-anchor="end">$38,200</text>
+      
+      <rect x="504" y="436" width="6" height="6" rx="1" fill="#a78bfa"/>
+      <text x="516" y="442" fill="#94a3b8" font-family="system-ui" font-size="6.5">SLV</text>
+      <text x="660" y="442" fill="#facc15" font-family="system-ui" font-size="6.5" font-weight="600" text-anchor="end">+5.7%</text>
+      <text x="694" y="442" fill="#64748b" font-family="system-ui" font-size="6" text-anchor="end">$18,500</text>
+
+      <rect x="504" y="452" width="6" height="6" rx="1" fill="#34d399"/>
+      <text x="516" y="458" fill="#94a3b8" font-family="system-ui" font-size="6.5">Ahorro</text>
+      <text x="660" y="458" fill="#64748b" font-family="system-ui" font-size="6.5" font-weight="600" text-anchor="end">—</text>
+      <text x="694" y="458" fill="#64748b" font-family="system-ui" font-size="6" text-anchor="end">$18,450</text>
+      
+      <!-- Bottom bar -->
+      <rect x="488" y="510" width="224" height="32" fill="#1e293b"/>
+      <text x="530" y="530" text-anchor="middle" fill="#38bdf8" font-family="system-ui" font-size="6.5" font-weight="600">Dashboard</text>
+      <text x="600" y="530" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="6.5">Refresh</text>
+      <text x="670" y="530" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="6.5">Config</text>
+    </g>
+    <rect x="575" y="538" width="50" height="4" rx="2" fill="#444"/>
+  </g>
+
+  <!-- Step label 2 -->
+  <text x="600" y="580" text-anchor="middle" fill="#e2e8f0" font-family="system-ui" font-size="13" font-weight="700">PASO 2</text>
+  <text x="600" y="598" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="9.5">Claude analiza y transforma</text>
+  <text x="600" y="612" text-anchor="middle" fill="#a78bfa" font-family="system-ui" font-size="9.5" font-weight="600">→ Inteligencia financiera</text>
+
+  <!-- ═══════ PHONE 3: Business CRM ═══════ -->
+  <g filter="url(#shadow)">
+    <rect x="875" y="30" width="250" height="520" rx="24" fill="#1a1a2e" stroke="#333" stroke-width="2"/>
+    <rect x="965" y="36" width="70" height="6" rx="3" fill="#333"/>
+    <g clip-path="url(#screenClip3)">
+      <rect x="888" y="58" width="224" height="484" fill="#0f172a"/>
+      
+      <!-- Header -->
+      <rect x="888" y="58" width="224" height="52" fill="#1e293b"/>
+      <text x="1000" y="82" text-anchor="middle" fill="#e2e8f0" font-family="system-ui" font-size="11" font-weight="700">🏪 Mi Negocio</text>
+      <text x="1000" y="96" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="7">E-commerce Dashboard</text>
+      
+      <!-- Revenue KPI -->
+      <rect x="894" y="116" width="212" height="60" rx="10" fill="linear-gradient(135deg, #1e293b, #1e3a5f)" stroke="#38bdf833" stroke-width="1"/>
+      <rect x="894" y="116" width="212" height="60" rx="10" fill="#1e293b"/>
+      <text x="1000" y="136" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="7">INGRESOS HOY</text>
+      <text x="1000" y="160" text-anchor="middle" fill="#38bdf8" font-family="system-ui" font-size="22" font-weight="700">$2,847</text>
+      <text x="1000" y="172" text-anchor="middle" fill="#34d399" font-family="system-ui" font-size="7">Meta: $3,000 (95%)</text>
+      
+      <!-- Mini KPIs -->
+      <rect x="894" y="184" width="68" height="50" rx="6" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="928" y="200" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="5.5">PEDIDOS</text>
+      <text x="928" y="218" text-anchor="middle" fill="#e2e8f0" font-family="system-ui" font-size="14" font-weight="700">47</text>
+      <text x="928" y="228" text-anchor="middle" fill="#34d399" font-family="system-ui" font-size="5.5">↑ 8</text>
+      
+      <rect x="966" y="184" width="68" height="50" rx="6" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="1000" y="200" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="5.5">TICKET</text>
+      <text x="1000" y="218" text-anchor="middle" fill="#e2e8f0" font-family="system-ui" font-size="14" font-weight="700">$60</text>
+      <text x="1000" y="228" text-anchor="middle" fill="#34d399" font-family="system-ui" font-size="5.5">↑ 5%</text>
+      
+      <rect x="1038" y="184" width="68" height="50" rx="6" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="1072" y="200" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="5.5">CONV %</text>
+      <text x="1072" y="218" text-anchor="middle" fill="#e2e8f0" font-family="system-ui" font-size="14" font-weight="700">3.2</text>
+      <text x="1072" y="228" text-anchor="middle" fill="#facc15" font-family="system-ui" font-size="5.5">→ 0</text>
+      
+      <!-- Hourly sales line -->
+      <rect x="894" y="242" width="212" height="100" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="904" y="258" fill="#64748b" font-family="system-ui" font-size="6.5">VENTAS POR HORA (HOY)</text>
+      <polyline points="910,320 925,315 940,308 955,298 970,280 985,275 1000,268 1015,272 1030,265 1045,260 1060,258 1075,250 1090,248" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Area fill -->
+      <polygon points="910,320 925,315 940,308 955,298 970,280 985,275 1000,268 1015,272 1030,265 1045,260 1060,258 1075,250 1090,248 1090,330 910,330" fill="#38bdf8" opacity="0.08"/>
+      <circle cx="1090" cy="248" r="3" fill="#38bdf8"/>
+      <text x="1090" y="244" text-anchor="middle" fill="#38bdf8" font-family="system-ui" font-size="6" font-weight="600">$248</text>
+      <!-- Time labels -->
+      <text x="910" y="338" fill="#475569" font-family="system-ui" font-size="5">8am</text>
+      <text x="970" y="338" fill="#475569" font-family="system-ui" font-size="5">11am</text>
+      <text x="1030" y="338" fill="#475569" font-family="system-ui" font-size="5">2pm</text>
+      <text x="1090" y="338" fill="#475569" font-family="system-ui" font-size="5">5pm</text>
+      
+      <!-- Top products -->
+      <rect x="894" y="350" width="212" height="115" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+      <text x="904" y="366" fill="#64748b" font-family="system-ui" font-size="6.5">TOP PRODUCTOS HOY</text>
+      <line x1="894" y1="374" x2="1106" y2="374" stroke="#334155" stroke-width="0.5"/>
+      
+      <!-- Product rows with progress bars -->
+      <text x="904" y="390" fill="#e2e8f0" font-family="system-ui" font-size="7">Camiseta Premium</text>
+      <rect x="904" y="394" width="192" height="4" rx="2" fill="#334155"/>
+      <rect x="904" y="394" width="154" height="4" rx="2" fill="#38bdf8"/>
+      <text x="1096" y="390" text-anchor="end" fill="#38bdf8" font-family="system-ui" font-size="6.5" font-weight="600">23 uds</text>
+      
+      <text x="904" y="414" fill="#e2e8f0" font-family="system-ui" font-size="7">Jeans Classic</text>
+      <rect x="904" y="418" width="192" height="4" rx="2" fill="#334155"/>
+      <rect x="904" y="418" width="115" height="4" rx="2" fill="#a78bfa"/>
+      <text x="1096" y="414" text-anchor="end" fill="#a78bfa" font-family="system-ui" font-size="6.5" font-weight="600">14 uds</text>
+      
+      <text x="904" y="438" fill="#e2e8f0" font-family="system-ui" font-size="7">Zapatos Runner</text>
+      <rect x="904" y="442" width="192" height="4" rx="2" fill="#334155"/>
+      <rect x="904" y="442" width="67" height="4" rx="2" fill="#34d399"/>
+      <text x="1096" y="438" text-anchor="end" fill="#34d399" font-family="system-ui" font-size="6.5" font-weight="600">8 uds</text>
+
+      <text x="904" y="458" fill="#e2e8f0" font-family="system-ui" font-size="7">Gorra Urban</text>
+      <rect x="904" y="462" width="192" height="4" rx="2" fill="#334155"/>
+      <rect x="904" y="462" width="19" height="4" rx="2" fill="#fb923c"/>
+      <text x="1096" y="458" text-anchor="end" fill="#fb923c" font-family="system-ui" font-size="6.5" font-weight="600">2 uds</text>
+      
+      <!-- Bottom bar -->
+      <rect x="888" y="510" width="224" height="32" fill="#1e293b"/>
+      <text x="930" y="530" text-anchor="middle" fill="#38bdf8" font-family="system-ui" font-size="6.5" font-weight="600">Dashboard</text>
+      <text x="1000" y="530" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="6.5">Refresh</text>
+      <text x="1070" y="530" text-anchor="middle" fill="#475569" font-family="system-ui" font-size="6.5">Config</text>
+    </g>
+    <rect x="975" y="538" width="50" height="4" rx="2" fill="#444"/>
+  </g>
+
+  <!-- Step label 3 -->
+  <text x="1000" y="580" text-anchor="middle" fill="#e2e8f0" font-family="system-ui" font-size="13" font-weight="700">PASO 3</text>
+  <text x="1000" y="598" text-anchor="middle" fill="#64748b" font-family="system-ui" font-size="9.5">Consulta desde tu celular</text>
+  <text x="1000" y="612" text-anchor="middle" fill="#34d399" font-family="system-ui" font-size="9.5" font-weight="600">→ Decisiones con datos</text>
+
+  <!-- Arrows between phones -->
+  <g opacity="0.6">
+    <line x1="340" y1="290" x2="460" y2="290" stroke="url(#accent)" stroke-width="2" stroke-dasharray="6 4"/>
+    <polygon points="460,285 470,290 460,295" fill="#a78bfa"/>
+    <line x1="740" y1="290" x2="860" y2="290" stroke="url(#accent)" stroke-width="2" stroke-dasharray="6 4"/>
+    <polygon points="860,285 870,290 860,295" fill="#34d399"/>
+  </g>
+
+  <!-- Title at top -->
+  <text x="600" y="660" text-anchor="middle" fill="#e2e8f0" font-family="system-ui" font-size="16" font-weight="700" letter-spacing="0.5">CSV → Claude + DataPocket MCP → Dashboard Mobile-First</text>
+  <text x="600" y="682" text-anchor="middle" fill="#38bdf8" font-family="system-ui" font-size="11">Stack gratuito: Python + PostgreSQL + Power BI = $0 en licencias</text>
+</svg>

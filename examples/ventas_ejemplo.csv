@@ -1,0 +1,25 @@
+producto,ventas_usd,unidades,mes,region,vendedor
+Camiseta Premium,4200,140,Enero,Norte,Carlos
+Jeans Classic,3800,95,Enero,Norte,Carlos
+Zapatos Runner,5600,80,Enero,Sur,María
+Gorra Urban,1200,200,Enero,Sur,María
+Camiseta Premium,5100,170,Febrero,Norte,Carlos
+Jeans Classic,4200,105,Febrero,Norte,Carlos
+Zapatos Runner,6800,97,Febrero,Sur,María
+Gorra Urban,1500,250,Febrero,Sur,María
+Camiseta Premium,6300,210,Marzo,Norte,Carlos
+Jeans Classic,4800,120,Marzo,Norte,Carlos
+Zapatos Runner,7200,103,Marzo,Sur,María
+Gorra Urban,1800,300,Marzo,Sur,María
+Camiseta Premium,5800,193,Abril,Norte,Carlos
+Jeans Classic,5200,130,Abril,Centro,Ana
+Zapatos Runner,8100,116,Abril,Sur,María
+Gorra Urban,2100,350,Abril,Centro,Ana
+Camiseta Premium,7100,237,Mayo,Norte,Carlos
+Jeans Classic,5600,140,Mayo,Centro,Ana
+Zapatos Runner,9200,131,Mayo,Sur,María
+Gorra Urban,2400,400,Mayo,Centro,Ana
+Camiseta Premium,8200,273,Junio,Norte,Carlos
+Jeans Classic,6100,153,Junio,Centro,Ana
+Zapatos Runner,10500,150,Junio,Sur,María
+Gorra Urban,2800,467,Junio,Centro,Ana
