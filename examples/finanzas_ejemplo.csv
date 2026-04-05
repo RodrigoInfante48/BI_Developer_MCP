@@ -1,0 +1,36 @@
+fecha,tipo,categoria,descripcion,monto_usd
+2026-01-05,ingreso,salario,Salario Enero,3200
+2026-01-10,gasto,vivienda,Arriendo,850
+2026-01-10,gasto,servicios,Servicios publicos,120
+2026-01-15,gasto,alimentacion,Mercado quincenal,180
+2026-01-18,gasto,transporte,Gasolina,60
+2026-01-20,ingreso,freelance,Proyecto web cliente,500
+2026-01-22,gasto,entretenimiento,Cena restaurante,45
+2026-01-25,gasto,salud,Gimnasio mensual,35
+2026-01-28,inversion,VOO,Compra VOO,400
+2026-01-28,inversion,GLD,Compra GLD,200
+2026-01-30,gasto,alimentacion,Mercado fin de mes,150
+2026-02-05,ingreso,salario,Salario Febrero,3200
+2026-02-10,gasto,vivienda,Arriendo,850
+2026-02-10,gasto,servicios,Servicios publicos,115
+2026-02-12,gasto,educacion,Curso online,49
+2026-02-15,gasto,alimentacion,Mercado quincenal,175
+2026-02-18,gasto,transporte,Gasolina,55
+2026-02-20,ingreso,freelance,Consultoria datos,750
+2026-02-22,gasto,entretenimiento,Streaming mensual,25
+2026-02-25,gasto,salud,Gimnasio mensual,35
+2026-02-28,inversion,VOO,Compra VOO,500
+2026-02-28,inversion,SLV,Compra SLV,150
+2026-02-28,gasto,alimentacion,Mercado fin de mes,160
+2026-03-05,ingreso,salario,Salario Marzo,3200
+2026-03-08,ingreso,freelance,Clase de ingles,320
+2026-03-10,gasto,vivienda,Arriendo,850
+2026-03-10,gasto,servicios,Servicios publicos,125
+2026-03-15,gasto,alimentacion,Mercado quincenal,190
+2026-03-18,gasto,transporte,Gasolina,65
+2026-03-20,ingreso,freelance,Dashboard cliente,600
+2026-03-22,gasto,entretenimiento,Salida cine,30
+2026-03-25,gasto,salud,Gimnasio mensual,35
+2026-03-28,inversion,VOO,Compra VOO,500
+2026-03-28,inversion,GLD,Compra GLD,300
+2026-03-30,gasto,alimentacion,Mercado fin de mes,145

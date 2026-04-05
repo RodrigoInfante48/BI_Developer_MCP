@@ -1,0 +1,6 @@
+[
+  {"producto": "Widget A", "ventas": 15000, "mes": "Enero", "region": "Norte"},
+  {"producto": "Widget B", "ventas": 12000, "mes": "Enero", "region": "Sur"},
+  {"producto": "Widget A", "ventas": 18000, "mes": "Febrero", "region": "Norte"},
+  {"producto": "Widget B", "ventas": 14500, "mes": "Febrero", "region": "Sur"}
+]

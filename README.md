@@ -38,12 +38,14 @@ Tú:     Abres el link en tu celular → Toda tu inteligencia en la palma de tu 
 
 ## Formatos de entrada soportados
 
-| Formato | Ejemplo |
-|---------|---------|
-| **CSV** | Exporta de Excel, Google Sheets, tu ERP, tu CRM |
-| **JSON** | APIs, exports de Notion, Airtable, cualquier sistema |
-| **SQL Results** | Copia resultados de pgAdmin, DBeaver, psql |
-| **Excel** | Copia las celdas y pégalas como CSV |
+| Formato | Extensión | Cómo usarlo |
+|---------|-----------|-------------|
+| **CSV** | .csv | Pega el texto directamente o indica el path |
+| **TSV** | .tsv | Tab-separated — se detecta automáticamente |
+| **JSON** | .json | Array de objetos: [{...}, {...}] |
+| **JSON Lines** | .jsonl | Una línea por objeto — común en APIs |
+| **Excel** | .xlsx | Envía como base64 o indica el path |
+| **SQL Results** | — | Copia resultados de psql/DBeaver como CSV |
 
 ---
 
@@ -163,7 +165,7 @@ Opciones para acceder:
 ### 1. Instala
 
 ```bash
-pip install mcp pydantic httpx
+pip install mcp pydantic httpx openpyxl chardet
 ```
 
 ### 2. Configura Claude Desktop
@@ -233,11 +235,12 @@ Listo. Sin más.
 
 | Tool | Qué hace |
 |------|----------|
-| `datapocket_ingest_data` | Perfila tu data, infiere tipos, genera SQL para PostgreSQL |
-| `datapocket_transform` | Limpia, filtra, agrega datos + genera código Python reproducible |
+| `datapocket_ingest_data` | Perfila tu data (CSV/TSV/JSON/JSONL/XLSX), infiere tipos, genera SQL |
+| `datapocket_transform` | Limpia, filtra, agrega, pivota datos + genera código Python reproducible |
 | `datapocket_generate_dashboard` | Crea dashboards HTML mobile-first con KPIs, charts y tablas |
 | `datapocket_query_to_dashboard` | Convierte resultados SQL en dashboards auto-visualizados |
 | `datapocket_powerbi_setup` | Genera conexión Power BI (código M + medidas DAX) |
+| `datapocket_export` | Exporta datos transformados a CSV, JSON, JSONL, SQL o Markdown |
 
 ---
 
@@ -257,15 +260,21 @@ Incluye: KPIs, funnel de ventas, donut por zona, líneas de tendencia, pipeline 
 datapocket-mcp/
 ├── README.md                          ← Estás aquí
 ├── requirements.txt                   ← pip install
+├── pyproject.toml                     ← Packaging moderno
 ├── src/
-│   └── datapocket_mcp.py             ← MCP Server (5 tools)
+│   └── datapocket_mcp.py             ← MCP Server (6 tools) v2.0.0
 ├── dashboards/
 │   └── demo_veterinarias.html        ← Demo funcional mobile-first
 ├── assets/
 │   └── hero-mockup.svg               ← Mockups de resultado
-└── examples/
-    ├── ventas_ejemplo.csv            ← CSV de prueba
-    └── finanzas_ejemplo.csv          ← CSV financiero de prueba
+├── examples/
+│   ├── ventas_ejemplo.csv            ← CSV de prueba
+│   ├── finanzas_ejemplo.csv          ← CSV financiero de prueba
+│   ├── ejemplo.json                  ← JSON array de prueba
+│   ├── ejemplo.jsonl                 ← JSON Lines de prueba
+│   └── ejemplo.tsv                   ← TSV de prueba
+└── tests/
+    └── test_datapocket.py            ← Test suite (20 tests)
 ```
 
 ---
