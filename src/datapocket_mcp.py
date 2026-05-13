@@ -1598,7 +1598,282 @@ Running Total = CALCULATE([Total Revenue], FILTER(ALL('Calendar'[Date]), 'Calend
 """
 
 
-# ─── Tool 6: Export Data ───
+# ─── Tool 6: Tableau Connection ───
+
+class TableauConnectionInput(BaseModel):
+    """Input for generating Tableau connection setup."""
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+
+    table_names: List[str] = Field(..., description="List of PostgreSQL table names to connect", min_length=1, max_length=20)
+    schema_name: str = Field(default=DEFAULT_SCHEMA, description="PostgreSQL schema")
+    pg_host: str = Field(default="localhost", description="PostgreSQL host")
+    pg_port: str = Field(default="5432", description="PostgreSQL port")
+    pg_database: str = Field(default="datapocket", description="PostgreSQL database name")
+    date_column: Optional[str] = Field(default=None, description="Main date column for temporal calculations")
+    measure_columns: Optional[List[str]] = Field(default=None, description="Numeric columns for calculated fields")
+    dimension_columns: Optional[List[str]] = Field(default=None, description="Categorical columns")
+
+
+@mcp.tool(
+    name="datapocket_tableau_setup",
+    annotations={
+        "title": "Generate Tableau Connection",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False
+    }
+)
+async def datapocket_tableau_setup(params: TableauConnectionInput) -> str:
+    """Generate Tableau Desktop connection setup for PostgreSQL tables.
+
+    Creates a .tds datasource XML file, calculated fields in native Tableau syntax,
+    optimized Custom SQL, viz recommendations, and step-by-step connection instructions.
+
+    Args:
+        params (TableauConnectionInput): Validated input containing:
+            - table_names (List[str]): Tables to connect
+            - schema_name (str): PostgreSQL schema
+            - pg_host (str): Database host
+            - pg_port (str): Database port
+            - pg_database (str): Database name
+            - date_column (Optional[str]): Main date column for time calculations
+            - measure_columns (Optional[List[str]]): Numeric columns for calculated fields
+            - dimension_columns (Optional[List[str]]): Categorical columns
+
+    Returns:
+        str: Complete Tableau setup guide with .tds XML, calculated fields, Custom SQL, and viz recommendations.
+    """
+    safe_tables = [_sanitize_table_name(t) for t in params.table_names]
+    primary_table = safe_tables[0]
+    first_measure = (params.measure_columns or ["revenue"])[0]
+    first_dim = (params.dimension_columns or ["categoria"])[0]
+
+    # ── 1. TDS XML ──────────────────────────────────────────────────────────
+    tds_datasources = []
+    for table in safe_tables:
+        # Map measure columns to role=measure/type=quantitative, rest to dimension
+        all_columns = []
+        if params.measure_columns:
+            for col in params.measure_columns:
+                safe_col = _sanitize_table_name(col)
+                all_columns.append(
+                    f'      <column datatype="real" name="[{safe_col}]" role="measure" type="quantitative"/>'
+                )
+        if params.dimension_columns:
+            for col in params.dimension_columns:
+                safe_col = _sanitize_table_name(col)
+                all_columns.append(
+                    f'      <column datatype="string" name="[{safe_col}]" role="dimension" type="nominal"/>'
+                )
+        if params.date_column:
+            safe_dc = _sanitize_table_name(params.date_column)
+            all_columns.append(
+                f'      <column datatype="date" name="[{safe_dc}]" role="dimension" type="ordinal"/>'
+            )
+        columns_xml = "\n".join(all_columns) if all_columns else \
+            '      <column datatype="string" name="[id]" role="dimension" type="nominal"/>'
+
+        tds_datasources.append(f"""  <!-- Datasource: {table} -->
+  <datasource caption='{table}' name='{table}' version='18.1'>
+    <connection authentication='username-password'
+                class='postgres'
+                dbname='{params.pg_database}'
+                port='{params.pg_port}'
+                server='{params.pg_host}'
+                username='datapocket_user'>
+      <relation name='{table}' table='[{params.schema_name}].[{table}]' type='table'/>
+    </connection>
+    <aliases enabled='yes'/>
+{columns_xml}
+  </datasource>""")
+
+    tds_xml = f"""<?xml version='1.0' encoding='utf-8' ?>
+<workbook source-build='2024.1' source-platform='linux' version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+{chr(10).join(tds_datasources)}
+</workbook>"""
+
+    # ── 2. Calculated Fields ────────────────────────────────────────────────
+    m = f"[{first_measure}]"
+    d = f"[{first_dim}]"
+
+    calc_fields = [
+        (
+            "% del Total por Dimensión",
+            f"{{ FIXED {d} : SUM({m}) }} / TOTAL(SUM({m}))",
+            "LOD Expression — porcentaje que representa cada dimensión sobre el total"
+        ),
+        (
+            "Running Total",
+            f"RUNNING_SUM(SUM({m}))",
+            "Acumulado corriente — requiere Table Calculation sobre la vista"
+        ),
+        (
+            "Moving Average 3 Períodos",
+            f"WINDOW_AVG(SUM({m}), -2, 0)",
+            "Promedio móvil de 3 períodos — suaviza variaciones estacionales"
+        ),
+        (
+            "Rank Dense",
+            f"RANK_DENSE(SUM({m}))",
+            "Ranking denso sin huecos entre posiciones iguales"
+        ),
+    ]
+
+    yoy_note = ""
+    if params.date_column:
+        safe_dc = _sanitize_table_name(params.date_column)
+        calc_fields.append((
+            "YoY Growth (Year-over-Year)",
+            f"(SUM({m}) - LOOKUP(SUM({m}), -12)) / ABS(LOOKUP(SUM({m}), -12))",
+            f"Crecimiento año sobre año usando LOOKUP(-12) — requiere [{safe_dc}] como dimensión de fecha en la vista"
+        ))
+        yoy_note = f"\n> ⚠️  YoY Growth requiere que `[{safe_dc}]` esté como dimensión **mensual** en la vista para que LOOKUP(-12) apunte al mismo mes del año anterior."
+
+    calc_fields_section = ""
+    for name, formula, note in calc_fields:
+        calc_fields_section += f"""
+### `{name}`
+```tableau
+{formula}
+```
+> {note}
+"""
+
+    # ── 3. Custom SQL ───────────────────────────────────────────────────────
+    select_parts = []
+    if params.dimension_columns:
+        select_parts += [f'  {params.schema_name}.{primary_table}.{_sanitize_table_name(c)}' for c in params.dimension_columns]
+    if params.date_column:
+        safe_dc = _sanitize_table_name(params.date_column)
+        select_parts.append(f'  {params.schema_name}.{primary_table}.{safe_dc}')
+    if params.measure_columns:
+        for col in params.measure_columns:
+            safe_col = _sanitize_table_name(col)
+            select_parts.append(f'  SUM({params.schema_name}.{primary_table}.{safe_col}) AS total_{safe_col}')
+
+    if not select_parts:
+        select_parts = [f'  {params.schema_name}.{primary_table}.*']
+
+    group_parts = []
+    if params.dimension_columns:
+        group_parts += [f'  {params.schema_name}.{primary_table}.{_sanitize_table_name(c)}' for c in params.dimension_columns]
+    if params.date_column:
+        safe_dc = _sanitize_table_name(params.date_column)
+        group_parts.append(f'  {params.schema_name}.{primary_table}.{safe_dc}')
+
+    order_clause = ""
+    if params.date_column:
+        safe_dc = _sanitize_table_name(params.date_column)
+        order_clause = f"\nORDER BY\n  {params.schema_name}.{primary_table}.{safe_dc} ASC"
+
+    select_sql = ",\n".join(select_parts)
+    group_sql = f"\nGROUP BY\n{chr(10).join(group_parts)}" if group_parts and params.measure_columns else ""
+    custom_sql = f"""SELECT
+{select_sql}
+FROM {params.schema_name}.{primary_table}{group_sql}{order_clause}"""
+
+    if len(safe_tables) > 1:
+        join_parts = []
+        for t in safe_tables[1:]:
+            join_parts.append(f"JOIN {params.schema_name}.{t} ON {params.schema_name}.{primary_table}.id = {params.schema_name}.{t}.id")
+        custom_sql = custom_sql.replace(
+            f"FROM {params.schema_name}.{primary_table}",
+            f"FROM {params.schema_name}.{primary_table}\n" + "\n".join(join_parts)
+        )
+
+    # ── 4. Viz Recommendations ──────────────────────────────────────────────
+    viz_recs = """| Tipo de Columna | Viz Recomendada en Tableau | Notas |
+| --- | --- | --- |
+| Dimensión (string) | Bar Chart, Treemap, Highlight Table | Arrastra a Rows/Columns |
+| Medida (número) | Bar Chart, Line Chart, Scatter Plot | Arrastra a Columns/Rows |
+| Fecha (date) | Line Chart de series temporales | Usa granularidad Month/Quarter |
+| Fecha + Medida | Dual-Axis Line, Area Chart | Click derecho → Dual Axis |
+| Dimensión + Medida | Horizontal Bar (ranking) | Sort descending para top-N |
+| Dos Medidas | Scatter Plot | Detecta correlaciones |
+| Geográfica (país/región) | Map (Filled Map) | Requiere role='Geographic' |
+| Jerarquía | Treemap, Sunburst (extensión) | Drill-down nativo con + |"""
+
+    # ── 5. Step-by-Step Instructions ────────────────────────────────────────
+    instructions_desktop = f"""### Tableau Desktop
+1. Abre **Tableau Desktop** → **Connect** → **To a Server** → **PostgreSQL**
+2. Server: `{params.pg_host}` · Port: `{params.pg_port}` · Database: `{params.pg_database}`
+3. Authentication: Username/Password (usuario: `datapocket_user`)
+4. Selecciona el schema `{params.schema_name}` y arrastra las tablas: {', '.join(f'`{t}`' for t in safe_tables)}
+5. Para usar Custom SQL: **New Custom SQL** → pega el query de la sección anterior
+6. Guarda el datasource como `{primary_table}.tds` para reutilizar
+7. Publica en **Tableau Server/Online**: Server → Publish Workbook
+
+### Tableau Public (gratuito)
+1. Descarga **Tableau Public** (gratis) desde public.tableau.com
+2. **Connect** → **Text file** o **Excel** (Tableau Public NO conecta a PostgreSQL directamente)
+3. Alternativa: Exporta tu query de PostgreSQL como CSV → Conéctate al CSV
+4. Diseña tu viz y publica gratis en Tableau Public Gallery"""
+
+    # ── 6. Cost note ────────────────────────────────────────────────────────
+    cost_note = """| Plan | Precio | Características principales | Limitaciones |
+| --- | --- | --- | --- |
+| **Tableau Public** | **$0** | Todas las vizs, publicación pública | Sin PostgreSQL directo, datos públicos |
+| **Tableau Creator** | **$75/user/mes** | Desktop + Server, todas las fuentes | Precio por usuario |
+| **Tableau Explorer** | **$42/user/mes** | Solo web, sin Desktop | Requiere al menos 1 Creator |
+| **Tableau Viewer** | **$15/user/mes** | Solo lectura de dashboards | Sin edición |
+
+> 💡 **Stack $0**: Exporta tu data a CSV con `datapocket_export` → carga en Tableau Public → comparte el link.
+> 🎯 **Alternativa gratuita**: Power BI Desktop ($0) conecta directo a PostgreSQL — usa `datapocket_powerbi_setup`."""
+
+    return f"""# 📊 DataPocket — Tableau Setup
+
+## Tablas: {', '.join(f'`{t}`' for t in safe_tables)}
+- **Host**: `{params.pg_host}:{params.pg_port}` · **Database**: `{params.pg_database}` · **Schema**: `{params.schema_name}`
+- **Fecha**: `{params.date_column or 'No especificada'}` · **Medidas**: {', '.join(f'`{c}`' for c in (params.measure_columns or [])) or 'No especificadas'}
+- **Dimensiones**: {', '.join(f'`{c}`' for c in (params.dimension_columns or [])) or 'No especificadas'}
+
+---
+
+## 1. Archivo .tds (Tableau Datasource XML)
+Guarda como `{primary_table}.tds` y ábrelo directamente en Tableau Desktop:
+
+```xml
+{tds_xml}
+```
+
+---
+
+## 2. Calculated Fields (sintaxis Tableau nativa)
+Crea estos campos en **Analysis → Create Calculated Field**:
+{calc_fields_section}{yoy_note}
+
+---
+
+## 3. Custom SQL — New Custom SQL
+Pega en **Data Source** → **New Custom SQL**:
+
+```sql
+{custom_sql}
+```
+
+---
+
+## 4. Recomendaciones de Visualización
+
+{viz_recs}
+
+---
+
+## 5. Instrucciones de Conexión
+
+{instructions_desktop}
+
+---
+
+## 6. Costos — Tableau Public vs Licencias
+
+{cost_note}
+"""
+
+
+# ─── Tool 7: Export Data ───
+
 
 class ExportInput(BaseModel):
     """Input for exporting data in multiple formats."""
