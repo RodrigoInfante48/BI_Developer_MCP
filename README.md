@@ -2,11 +2,12 @@
 
 # 📱 DataPocket MCP
 
-### Sube tu data. Claude te arma el dashboard. Consúltalo en tu celular.
+### Sube tu data. Claude te arma el reporte. En cualquier viz tool.
 
-[![Stack](https://img.shields.io/badge/Stack-Python%20+%20PostgreSQL%20+%20Power%20BI-38bdf8?style=flat-square)](.)
-[![Costo](https://img.shields.io/badge/Licencias-$0%20USD-34d399?style=flat-square)](.)
+[![Stack](https://img.shields.io/badge/Stack-Python%20+%20PostgreSQL-38bdf8?style=flat-square)](.)
+[![Licencias](https://img.shields.io/badge/Licencias-$0%20USD-34d399?style=flat-square)](.)
 [![MCP](https://img.shields.io/badge/Model%20Context%20Protocol-Ready-a78bfa?style=flat-square)](https://modelcontextprotocol.io)
+[![Version](https://img.shields.io/badge/Version-3.0.0-fb923c?style=flat-square)](.)
 
 </div>
 
@@ -14,91 +15,104 @@
 
 <div align="center">
 
-![DataPocket — De CSV a Dashboard Mobile-First](./assets/hero-mockup.svg)
+![DataPocket — De CSV a Dashboard en cualquier Viz Tool](./assets/hero-mockup.svg)
 
 </div>
 
 ---
 
-## ¿Qué obtienes?
+## ¿Qué es DataPocket MCP?
 
-**Subes un archivo. Recibes un reporte de inteligencia en tu celular.**
-
-DataPocket MCP convierte a Claude en tu analista de datos personal. Tú hablas, Claude hace todo el trabajo:
+**Un agente de BI universal.** Sube cualquier archivo de datos y Claude genera el paquete completo de conexión, transformación y analítica para la viz tool que uses — Power BI, Tableau, Looker o QuickSight.
 
 ```
 Tú:     "Aquí están mis ventas del trimestre" [pegas CSV]
-Claude: Analiza → Limpia → Carga en PostgreSQL → Genera dashboard
-Tú:     Abres el link en tu celular → Toda tu inteligencia en la palma de tu mano
+Claude: Analiza → Limpia → Carga en PostgreSQL → Genera paquete para tu viz tool
+Tú:     Abres el reporte en tu herramienta favorita → Listo
 ```
 
-**Sin código. Sin licencias. Sin setup complejo.**
+**Sin código. Sin licencias adicionales. Sin setup complejo.**
+
+---
+
+## Viz Tools soportadas
+
+| Ecosistema | Viz Tool | Qué genera DataPocket | Estado |
+|---|---|---|---|
+| **Microsoft** | Power BI Desktop | Código M (Power Query) + medidas DAX | ✅ Activo |
+| **Salesforce** | Tableau Desktop / Public | Archivo `.tds` + LOD expressions + Custom SQL | 🔜 v3.1 |
+| **Google** | Looker (Enterprise) | LookML completo (view + explore + model) | 🔜 v3.2 |
+| **Amazon** | QuickSight | Manifest JSON + dataset config + calculated fields + IAM policy | 🔜 v3.3 |
+
+> Cada tool genera un **paquete completo**: conexión + semántica/cálculos + instrucciones paso a paso + comparativa de costos.
 
 ---
 
 ## Formatos de entrada soportados
 
-| Formato | Extensión | Cómo usarlo |
-|---------|-----------|-------------|
-| **CSV** | .csv | Pega el texto directamente o indica el path |
-| **TSV** | .tsv | Tab-separated — se detecta automáticamente |
-| **JSON** | .json | Array de objetos: [{...}, {...}] |
-| **JSON Lines** | .jsonl | Una línea por objeto — común en APIs |
-| **Excel** | .xlsx | Envía como base64 o indica el path |
-| **SQL Results** | — | Copia resultados de psql/DBeaver como CSV |
+| Formato | Extensión | Detección |
+|---------|-----------|-----------|
+| CSV | `.csv` | Automática |
+| TSV | `.tsv` | Automática |
+| JSON Array | `.json` | Automática |
+| JSON Lines | `.jsonl` | Automática |
+| Excel | `.xlsx` | Por path o base64 |
+| SQL Results | — | Pega desde psql/DBeaver |
 
 ---
 
-## Casos de uso reales
+## Tools MCP incluidos
 
-### 💰 Inteligencia Financiera Personal
-
-> *"Quiero ver mi portafolio de inversiones en mi celular"*
-
-Pegas tu CSV de transacciones del broker → Claude genera:
-- KPIs de patrimonio neto, rendimiento, tasa de ahorro
-- Distribución de activos (donut chart)
-- Flujo de caja mensual (ingresos vs gastos)
-- Rendimiento por instrumento
-- Tendencia histórica
-
----
-
-### 🏪 Dashboard de Negocio / E-commerce
-
-> *"Necesito ver las ventas de hoy desde mi celular"*
-
-Conectas tu PostgreSQL con los datos de ventas → Claude genera:
-- Revenue en tiempo real con meta diaria
-- Pedidos, ticket promedio, tasa de conversión
-- Gráfico de ventas por hora
-- Top productos con barras de progreso
-- Tabla de últimos pedidos
+| Tool | Qué hace | Output |
+|------|----------|--------|
+| `datapocket_ingest_data` | Perfila data, infiere tipos, genera SQL para PostgreSQL | Reporte + CREATE TABLE + INSERT |
+| `datapocket_transform` | Filtra, agrega, ordena, pivota datos | Data transformada + código Python |
+| `datapocket_generate_dashboard` | Dashboard HTML mobile-first con Chart.js | Archivo `index.html` |
+| `datapocket_query_to_dashboard` | Resultados SQL → dashboard automático | Archivo `index.html` |
+| `datapocket_powerbi_setup` | Conexión Power BI a PostgreSQL | Código M + medidas DAX starter |
+| `datapocket_tableau_setup` | Conexión Tableau a PostgreSQL | `.tds` + LOD expressions *(próximo)* |
+| `datapocket_looker_setup` | Modelo LookML para Looker | view + explore + model `.lkml` *(próximo)* |
+| `datapocket_quicksight_setup` | Conexión QuickSight (S3/RDS/Athena) | Manifest JSON + IAM policy *(próximo)* |
+| `datapocket_export` | Exporta datos a CSV, JSON, JSONL, SQL, Markdown | Archivo en formato elegido |
 
 ---
 
-### 🐾 CRM y Seguimiento de Leads
+## Estructura del repositorio
 
-> *"Tengo 500 prospectos en mi base, quiero ver el funnel"*
-
-Exportas tu CRM como CSV → Claude genera:
-- Funnel de ventas (leads → contactados → demos → cerrados)
-- Leads por zona geográfica
-- Pipeline por temperatura (frío/tibio/caliente)
-- Tabla de prospectos activos con status visual
-- Llamadas por semana con tendencia
-
----
-
-### 📊 Reporte Ejecutivo Mensual
-
-> *"Mi jefe quiere un reporte de KPIs cada lunes"*
-
-Copias los resultados de tu query SQL → Claude genera:
-- Dashboard automático con los KPIs detectados
-- Gráficos apropiados según el tipo de dato
-- Tabla de detalle con los datos completos
-- HTML que envías por WhatsApp o email
+```
+datapocket-mcp/
+├── src/
+│   └── datapocket_mcp.py          ← MCP Server — todos los tools
+│
+├── viz-tools/                     ← Paquetes por ecosistema
+│   ├── power-bi/                  ← Microsoft
+│   │   ├── README.md              ← Guía Power BI + ejemplos de output
+│   │   └── examples/              ← Outputs generados de muestra
+│   ├── tableau/                   ← Salesforce
+│   │   ├── README.md              ← Guía Tableau + ejemplos de output
+│   │   └── examples/
+│   ├── looker/                    ← Google
+│   │   ├── README.md              ← Guía Looker + ejemplos LookML
+│   │   └── examples/
+│   └── quicksight/                ← Amazon
+│       ├── README.md              ← Guía QuickSight + ejemplos JSON
+│       └── examples/
+│
+├── examples/                      ← Datos de prueba compartidos
+│   ├── ventas_ejemplo.csv
+│   ├── finanzas_ejemplo.csv
+│   ├── ejemplo.json
+│   ├── ejemplo.jsonl
+│   └── ejemplo.tsv
+│
+├── assets/
+│   └── hero-mockup.svg
+├── tests/
+│   └── test_datapocket.py
+├── CLAUDE.md                      ← Reglas de comportamiento del agente
+├── pyproject.toml
+└── requirements.txt
+```
 
 ---
 
@@ -107,62 +121,51 @@ Copias los resultados de tu query SQL → Claude genera:
 ### Paso 1 — Tú subes tu data
 
 ```
-Tú: Analiza estos datos y crea un dashboard para mi celular
+Tú: Analiza estos datos y crea el reporte para Power BI
 
 nombre,ventas,mes,region
 Producto A,12400,Enero,Norte
 Producto B,9800,Enero,Sur
-Producto A,15200,Febrero,Norte
-Producto B,11300,Febrero,Sur
-Producto A,18100,Marzo,Norte
-Producto B,13700,Marzo,Sur
 ```
 
-### Paso 2 — Claude analiza y perfila
+### Paso 2 — Claude perfila y confirma
 
 ```
-📊 DataPocket — Data Profile
+Archivo: ventas.csv
+Columnas: nombre (VARCHAR), ventas (BIGINT), mes (VARCHAR), region (VARCHAR)
+Registros: 6 | Nulls: 0%
+Insights: Producto A supera a B en todas las regiones. Norte lidera.
 
-Summary:
-- Rows: 6
-- Columns: 4
-- Types detected: nombre(VARCHAR), ventas(BIGINT), mes(VARCHAR), region(VARCHAR)
-- Nulls: 0%
-
-SQL generado: ✅ CREATE TABLE + INSERT listo para PostgreSQL
+Solo usaré estos datos. ¿Procedo?
 ```
 
-### Paso 3 — Claude transforma si es necesario
+### Paso 3 — Claude genera el paquete completo
 
-```
-🔄 Operaciones aplicadas:
-- Eliminados duplicados
-- Agregado por mes (SUM ventas)
-- Ordenado cronológicamente
-- Código Python reproducible generado ✅
-```
+Para Power BI:
+- Código M listo para Advanced Editor
+- 3 medidas DAX de arranque (Total, MoM Growth, Running Total)
+- Guía de conexión PostgreSQL → Power BI Desktop
 
-### Paso 4 — Claude genera tu dashboard
+Para Tableau *(próximo)*:
+- Archivo `.tds` XML listo para abrir en Tableau Desktop
+- 5 calculated fields LOD para análisis inmediato
+- Custom SQL optimizado
 
-Te entrega un archivo HTML autocontenido:
-- Optimizado para pantallas de 320px-480px
-- Charts interactivos con Chart.js
-- Dark mode por defecto
-- Bottom bar estilo app nativa
+Para Looker *(próximo)*:
+- `view.lkml` con dimensions y measures inferidos de los datos
+- `explore.lkml` y `model.lkml` completos
+- PDT para agregaciones pre-calculadas
 
-### Paso 5 — Tú lo abres en tu celular
-
-Opciones para acceder:
-1. **GitHub Pages** (gratis) → URL permanente
-2. **WhatsApp** → Te envías el archivo HTML
-3. **Google Drive** → Lo subes y abres en Chrome mobile
-4. **Home Screen** → Agrégalo como "app" en tu iPhone/Android
+Para QuickSight *(próximo)*:
+- Manifest JSON para importar desde S3
+- Dataset configuration JSON para la API
+- IAM policy mínima necesaria
 
 ---
 
 ## Setup en 3 minutos
 
-### 1. Instala
+### 1. Instala dependencias
 
 ```bash
 pip install mcp pydantic httpx openpyxl chardet
@@ -193,89 +196,57 @@ Agrega a `claude_desktop_config.json`:
 ### 3. Habla con Claude
 
 ```
-"Aquí están mis datos de ventas [CSV]. 
- Crea un dashboard mobile-first para consultarlo en mi celular."
+"Aquí están mis datos de ventas [CSV].
+ Crea el reporte para Tableau / Power BI / Looker / QuickSight."
 ```
 
-Listo. Sin más.
+---
+
+## Comparativa de costos por ecosistema
+
+| Ecosistema | Tool | Costo mínimo | Mejor para |
+|---|---|---|---|
+| **Microsoft** | Power BI Desktop | $0 (Desktop gratis) | Entornos Microsoft 365 |
+| **Salesforce** | Tableau Public | $0 (datos públicos) | Viz interactiva avanzada |
+| **Salesforce** | Tableau Creator | $75/usuario/mes | Dashboards empresariales |
+| **Google** | Looker Studio | $0 | Dashboards rápidos con BigQuery |
+| **Google** | Looker Enterprise | $3,000+/mes | Data governance enterprise |
+| **Amazon** | QuickSight Reader | $0.30/sesión | Muchos viewers, pocos autores |
+| **Amazon** | QuickSight Author | $18/usuario/mes | Stack AWS nativo |
+
+> DataPocket MCP: **$0** — solo necesitas la herramienta que ya tienes.
 
 ---
 
 ## Stack técnico (todo gratis)
 
 ```
-┌──────────────┐     ┌────────────────┐     ┌──────────────────┐
-│  Tu data     │────▶│  Claude +      │────▶│  Dashboard HTML  │
-│  CSV / JSON  │     │  DataPocket    │     │  Mobile-First    │
-│  SQL Results │     │  MCP           │     │  Chart.js        │
-└──────────────┘     └───────┬────────┘     └──────────────────┘
+┌──────────────┐     ┌────────────────┐     ┌─────────────────────────────┐
+│  Tu data     │────▶│  Claude +      │────▶│  Power BI  │ Tableau        │
+│  CSV / JSON  │     │  DataPocket    │     │  Looker    │ QuickSight      │
+│  SQL Results │     │  MCP v3        │     └─────────────────────────────┘
+└──────────────┘     └───────┬────────┘
                              │
                     ┌────────┴────────┐
                     │                 │
               ┌─────▼─────┐   ┌──────▼──────┐
-              │ PostgreSQL │   │  Power BI   │
-              │ (gratuito) │   │  Desktop    │
-              │            │   │  (gratuito) │
+              │ PostgreSQL │   │  Dashboard  │
+              │ (gratuito) │   │  HTML       │
               └────────────┘   └─────────────┘
 ```
 
-| Componente | Costo | Alternativa paga |
-|-----------|-------|-----------------|
-| Python | $0 | — |
-| PostgreSQL | $0 | SQL Server ($15K+/año) |
-| Power BI Desktop | $0 | Tableau ($75/user/mes) |
-| DataPocket MCP | $0 | Looker ($5,000/mes) |
-| Chart.js | $0 | Highcharts ($590/año) |
-| GitHub Pages hosting | $0 | Hosting ($20-100/mes) |
-| **Total** | **$0** | **$6,000+/año** |
-
 ---
 
-## Tools incluidos
+## Roadmap
 
-| Tool | Qué hace |
-|------|----------|
-| `datapocket_ingest_data` | Perfila tu data (CSV/TSV/JSON/JSONL/XLSX), infiere tipos, genera SQL |
-| `datapocket_transform` | Limpia, filtra, agrega, pivota datos + genera código Python reproducible |
-| `datapocket_generate_dashboard` | Crea dashboards HTML mobile-first con KPIs, charts y tablas |
-| `datapocket_query_to_dashboard` | Convierte resultados SQL en dashboards auto-visualizados |
-| `datapocket_powerbi_setup` | Genera conexión Power BI (código M + medidas DAX) |
-| `datapocket_export` | Exporta datos transformados a CSV, JSON, JSONL, SQL o Markdown |
-
----
-
-## Demo en vivo
-
-Abre este archivo en tu celular para ver un ejemplo real:
-
-👉 **[`dashboards/demo_veterinarias.html`](./dashboards/demo_veterinarias.html)**
-
-Incluye: KPIs, funnel de ventas, donut por zona, líneas de tendencia, pipeline por temperatura, y tabla de prospectos.
-
----
-
-## Estructura del repo
-
-```
-datapocket-mcp/
-├── README.md                          ← Estás aquí
-├── requirements.txt                   ← pip install
-├── pyproject.toml                     ← Packaging moderno
-├── src/
-│   └── datapocket_mcp.py             ← MCP Server (6 tools) v2.0.0
-├── dashboards/
-│   └── demo_veterinarias.html        ← Demo funcional mobile-first
-├── assets/
-│   └── hero-mockup.svg               ← Mockups de resultado
-├── examples/
-│   ├── ventas_ejemplo.csv            ← CSV de prueba
-│   ├── finanzas_ejemplo.csv          ← CSV financiero de prueba
-│   ├── ejemplo.json                  ← JSON array de prueba
-│   ├── ejemplo.jsonl                 ← JSON Lines de prueba
-│   └── ejemplo.tsv                   ← TSV de prueba
-└── tests/
-    └── test_datapocket.py            ← Test suite (20 tests)
-```
+| Versión | Tool | Estado |
+|---|---|---|
+| v2.0 | Core MCP (ingest, transform, dashboard, Power BI, export) | ✅ Lanzado |
+| v3.1 | `datapocket_tableau_setup` | 🔜 En desarrollo |
+| v3.2 | `datapocket_looker_setup` | 🔜 Planificado |
+| v3.3 | `datapocket_quicksight_setup` | 🔜 Planificado |
+| v3.4 | `datapocket_metabase_setup` (open source) | 💡 Considerado |
+| v3.5 | `datapocket_superset_setup` (Apache, open source) | 💡 Considerado |
 
 ---
 
@@ -285,16 +256,16 @@ datapocket-mcp/
 No. Tú hablas con Claude en español. Claude hace todo.
 
 **¿Necesito instalar PostgreSQL?**
-Solo si quieres guardar los datos permanentemente. Para dashboards rápidos, solo necesitas pegar tu CSV.
+Solo si quieres guardar los datos permanentemente. Para dashboards rápidos, solo pega tu CSV.
 
-**¿Puedo compartir el dashboard?**
-Sí. Es un archivo HTML. Lo envías por WhatsApp, email, o lo subes a GitHub Pages gratis.
+**¿Puedo usar esto en el trabajo con Tableau o QuickSight?**
+Sí. El código generado (`.tds`, LookML, manifest JSON) es compatible con las versiones comerciales de cada tool.
 
-**¿Funciona en iPhone y Android?**
-Sí. Es HTML responsive optimizado para pantallas de 320px a 480px.
+**¿Funciona con datos sensibles?**
+DataPocket corre 100% local. Tus datos nunca salen de tu máquina salvo cuando los cargas tú mismo en la viz tool.
 
-**¿Puedo conectar Power BI?**
-Sí. El tool `datapocket_powerbi_setup` genera todo el código M y DAX listo para copiar y pegar.
+**¿Puedo contribuir?**
+Sí. Ver `viz-tools/` — cada carpeta documenta qué genera el tool correspondiente.
 
 ---
 
@@ -302,6 +273,6 @@ Sí. El tool `datapocket_powerbi_setup` genera todo el código M y DAX listo par
 
 **Hecho por [DailyDuty](https://github.com/RodrigoInfante48) — Instituto para el Desarrollo Diario**
 
-*De datos crudos a decisiones inteligentes. En tu celular. Gratis.*
+*De datos crudos a decisiones inteligentes. En tu viz tool favorita. Gratis.*
 
 </div>
