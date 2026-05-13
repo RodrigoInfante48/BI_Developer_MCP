@@ -8,6 +8,7 @@
 [![Licencias](https://img.shields.io/badge/Licencias-$0%20USD-34d399?style=flat-square)](.)
 [![MCP](https://img.shields.io/badge/Model%20Context%20Protocol-Ready-a78bfa?style=flat-square)](https://modelcontextprotocol.io)
 [![Version](https://img.shields.io/badge/Version-3.0.0-fb923c?style=flat-square)](.)
+[![Tests](https://img.shields.io/badge/Tests-29%20passing-22c55e?style=flat-square)](./tests/test_datapocket.py)
 
 </div>
 
@@ -40,9 +41,9 @@ Tú:     Abres el reporte en tu herramienta favorita → Listo
 | Ecosistema | Viz Tool | Qué genera DataPocket | Estado |
 |---|---|---|---|
 | **Microsoft** | Power BI Desktop | Código M (Power Query) + medidas DAX | ✅ Activo |
-| **Salesforce** | Tableau Desktop / Public | Archivo `.tds` + LOD expressions + Custom SQL | 🔜 v3.1 |
-| **Google** | Looker (Enterprise) | LookML completo (view + explore + model) | 🔜 v3.2 |
-| **Amazon** | QuickSight | Manifest JSON + dataset config + calculated fields + IAM policy | 🔜 v3.3 |
+| **Salesforce** | Tableau Desktop / Public | Archivo `.tds` + LOD expressions + Custom SQL | ✅ Activo |
+| **Google** | Looker (Enterprise) | LookML completo (view + explore + model) | ✅ Activo |
+| **Amazon** | QuickSight | Manifest JSON + dataset config + calculated fields + IAM policy | ✅ Activo |
 
 > Cada tool genera un **paquete completo**: conexión + semántica/cálculos + instrucciones paso a paso + comparativa de costos.
 
@@ -70,9 +71,9 @@ Tú:     Abres el reporte en tu herramienta favorita → Listo
 | `datapocket_generate_dashboard` | Dashboard HTML mobile-first con Chart.js | Archivo `index.html` |
 | `datapocket_query_to_dashboard` | Resultados SQL → dashboard automático | Archivo `index.html` |
 | `datapocket_powerbi_setup` | Conexión Power BI a PostgreSQL | Código M + medidas DAX starter |
-| `datapocket_tableau_setup` | Conexión Tableau a PostgreSQL | `.tds` + LOD expressions *(próximo)* |
-| `datapocket_looker_setup` | Modelo LookML para Looker | view + explore + model `.lkml` *(próximo)* |
-| `datapocket_quicksight_setup` | Conexión QuickSight (S3/RDS/Athena) | Manifest JSON + IAM policy *(próximo)* |
+| `datapocket_tableau_setup` | Conexión Tableau a PostgreSQL | `.tds` XML + 6 LOD expressions |
+| `datapocket_looker_setup` | Modelo LookML para Looker | view + explore + model `.lkml` + PDT |
+| `datapocket_quicksight_setup` | Conexión QuickSight (S3/RDS/Athena) | Manifest JSON + dataset config + IAM policy |
 | `datapocket_export` | Exporta datos a CSV, JSON, JSONL, SQL, Markdown | Archivo en formato elegido |
 
 ---
@@ -146,20 +147,20 @@ Para Power BI:
 - 3 medidas DAX de arranque (Total, MoM Growth, Running Total)
 - Guía de conexión PostgreSQL → Power BI Desktop
 
-Para Tableau *(próximo)*:
+Para Tableau:
 - Archivo `.tds` XML listo para abrir en Tableau Desktop
-- 5 calculated fields LOD para análisis inmediato
+- 6 calculated fields LOD para análisis inmediato (% total, running sum, rank, window avg, YoY, FIXED)
 - Custom SQL optimizado
 
-Para Looker *(próximo)*:
+Para Looker:
 - `view.lkml` con dimensions y measures inferidos de los datos
 - `explore.lkml` y `model.lkml` completos
 - PDT para agregaciones pre-calculadas
 
-Para QuickSight *(próximo)*:
+Para QuickSight:
 - Manifest JSON para importar desde S3
 - Dataset configuration JSON para la API
-- IAM policy mínima necesaria
+- IAM policy mínima + comandos CLI `aws quicksight`
 
 ---
 
@@ -242,9 +243,9 @@ Agrega a `claude_desktop_config.json`:
 | Versión | Tool | Estado |
 |---|---|---|
 | v2.0 | Core MCP (ingest, transform, dashboard, Power BI, export) | ✅ Lanzado |
-| v3.1 | `datapocket_tableau_setup` | 🔜 En desarrollo |
-| v3.2 | `datapocket_looker_setup` | 🔜 Planificado |
-| v3.3 | `datapocket_quicksight_setup` | 🔜 Planificado |
+| v3.1 | `datapocket_tableau_setup` | ✅ Lanzado |
+| v3.2 | `datapocket_looker_setup` | ✅ Lanzado |
+| v3.3 | `datapocket_quicksight_setup` | ✅ Lanzado |
 | v3.4 | `datapocket_metabase_setup` (open source) | 💡 Considerado |
 | v3.5 | `datapocket_superset_setup` (Apache, open source) | 💡 Considerado |
 

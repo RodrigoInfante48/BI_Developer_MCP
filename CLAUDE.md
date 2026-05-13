@@ -11,9 +11,9 @@ DataPocket MCP es un agente de BI universal. A partir de cualquier fuente de dat
 | Ecosistema | Tool | Tool MCP | Estado |
 |---|---|---|---|
 | Microsoft | Power BI Desktop | `datapocket_powerbi_setup` | ✅ Activo |
-| Salesforce | Tableau Desktop / Public | `datapocket_tableau_setup` | 🔜 Próximo |
-| Google | Looker / Looker Studio | `datapocket_looker_setup` | 🔜 Próximo |
-| Amazon | QuickSight | `datapocket_quicksight_setup` | 🔜 Próximo |
+| Salesforce | Tableau Desktop / Public | `datapocket_tableau_setup` | ✅ Activo |
+| Google | Looker / Looker Studio | `datapocket_looker_setup` | ✅ Activo |
+| Amazon | QuickSight | `datapocket_quicksight_setup` | ✅ Activo |
 
 **"Paquete completo"** significa, para cada tool:
 - Código de **conexión** a la fuente de datos (M, .tds XML, LookML connection, manifest JSON)
