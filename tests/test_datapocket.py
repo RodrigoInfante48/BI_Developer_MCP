@@ -32,6 +32,8 @@ from src.datapocket_mcp import (
     datapocket_tableau_setup,
     LookerConnectionInput,
     datapocket_looker_setup,
+    QuickSightConnectionInput,
+    datapocket_quicksight_setup,
 )
 
 # ──────────────────────────────────────────────
@@ -420,3 +422,72 @@ def test_looker_setup_join_and_cost():
     assert "Looker" in result
     assert "$3,000" in result
     assert "Looker Studio" in result
+
+
+# ──────────────────────────────────────────────
+# Test 27: QuickSight Setup — Dataset config y manifest JSON generados (s3)
+# ──────────────────────────────────────────────
+
+def test_quicksight_setup_s3_manifest_and_dataset():
+    params = QuickSightConnectionInput(
+        table_names=["ventas"],
+        source_type="s3",
+        aws_region="us-east-1",
+        aws_account_id="123456789012",
+        database_name="datapocket",
+        schema_name="public",
+        s3_bucket="my-datapocket-bucket",
+        measure_columns=["ventas_usd"],
+        date_column="mes",
+    )
+    result = asyncio.run(datapocket_quicksight_setup(params))
+    assert "Manifest JSON" in result
+    assert "s3://my-datapocket-bucket/ventas/" in result
+    assert '"format": "CSV"' in result
+    assert '"ImportMode": "SPICE"' in result
+    assert '"DataSetId": "dataset-ventas"' in result
+    assert "S3Source" in result
+
+
+# ──────────────────────────────────────────────
+# Test 28: QuickSight Setup — Calculated fields correctos para postgresql
+# ──────────────────────────────────────────────
+
+def test_quicksight_setup_calculated_fields_postgresql():
+    params = QuickSightConnectionInput(
+        table_names=["ventas", "productos"],
+        source_type="postgresql",
+        aws_account_id="123456789012",
+        database_name="datapocket",
+        measure_columns=["revenue"],
+        date_column="fecha",
+    )
+    result = asyncio.run(datapocket_quicksight_setup(params))
+    assert "sumOver" in result
+    assert "periodToDateSum" in result
+    assert "ifelse" in result
+    assert "dateDiff" in result
+    assert "rank(" in result
+    assert "RelationalTable" in result
+    assert "IAM Policy" in result
+
+
+# ──────────────────────────────────────────────
+# Test 29: QuickSight Setup — Nota de costos y CLI commands incluidos
+# ──────────────────────────────────────────────
+
+def test_quicksight_setup_cost_note_and_cli():
+    params = QuickSightConnectionInput(
+        table_names=["ventas"],
+        source_type="redshift",
+        aws_account_id="123456789012",
+        database_name="mi_redshift",
+    )
+    result = asyncio.run(datapocket_quicksight_setup(params))
+    assert "$0.30/sesión" in result
+    assert "$18/usuario/mes" in result
+    assert "Enterprise" in result
+    assert "aws quicksight create-data-source" in result
+    assert "aws quicksight create-data-set" in result
+    assert "SPICE" in result
+    assert "redshift" in result.lower()
