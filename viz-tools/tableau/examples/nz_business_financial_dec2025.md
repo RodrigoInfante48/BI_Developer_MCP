@@ -15,54 +15,51 @@ Reemplaza `C:/ruta/a/tu/carpeta/` con la ruta real donde tengas el CSV en tu má
 
 ```xml
 <?xml version='1.0' encoding='utf-8' ?>
-<workbook source-build='2024.3' source-platform='win' version='18.1'
-          xmlns:user='http://www.tableausoftware.com/xml/user'>
+<datasource name='nz_bdc_financial'
+            caption='NZ Business Financial Data Dec 2025'
+            version='18.1'
+            inline='true'>
 
-  <datasource caption='NZ Business Financial Data Dec 2025'
-              name='nz_bdc_financial'
-              version='18.1'>
+  <connection class='text'
+              filename='C:/Users/rodrigoi.NICE_SYSTEMS/OneDrive - NiCE Ltd/Desktop/Tableu/business-financial-data-december-2025-quarter.csv'
+              default-settings='yes'>
+    <format character=',' header='yes' locale='en_NZ' />
+    <relation name='business-financial-data-december-2025-quarter.csv'
+              table='[business-financial-data-december-2025-quarter#csv]'
+              type='table' />
+  </connection>
 
-    <connection class='text'
-                filename='C:/ruta/a/tu/carpeta/business-financial-data-december-2025-quarter.csv'
-                default-settings='yes'>
-      <format character=',' header='yes' locale='en_NZ' />
-      <relation name='business-financial-data-december-2025-quarter.csv'
-                table='[business-financial-data-december-2025-quarter#csv]'
-                type='table' />
-    </connection>
+  <aliases enabled='yes'/>
 
-    <aliases enabled='yes'/>
+  <!-- Dimensiones -->
+  <column datatype='string'  name='[Series_reference]' role='dimension' type='nominal'
+          caption='Series ID'/>
+  <column datatype='real'    name='[Period]'            role='dimension' type='ordinal'
+          caption='Period (YYYY.MM)'/>
+  <column datatype='string'  name='[STATUS]'            role='dimension' type='nominal'
+          caption='Status'/>
+  <column datatype='string'  name='[UNITS]'             role='dimension' type='nominal'
+          caption='Units'/>
+  <column datatype='string'  name='[Subject]'           role='dimension' type='nominal'
+          caption='Subject'/>
+  <column datatype='string'  name='[Group]'             role='dimension' type='nominal'
+          caption='Industry Level (NZSIOC)'/>
+  <column datatype='string'  name='[Series_title_1]'    role='dimension' type='nominal'
+          caption='Financial Variable'/>
+  <column datatype='string'  name='[Series_title_2]'    role='dimension' type='nominal'
+          caption='Industry'/>
+  <column datatype='string'  name='[Series_title_3]'    role='dimension' type='nominal'
+          caption='Price Type'/>
+  <column datatype='string'  name='[Series_title_4]'    role='dimension' type='nominal'
+          caption='Adjustment Method'/>
 
-    <!-- Dimensiones -->
-    <column datatype='string'  name='[Series_reference]' role='dimension' type='nominal'
-            caption='Series ID'/>
-    <column datatype='real'    name='[Period]'            role='dimension' type='ordinal'
-            caption='Period (YYYY.MM)'/>
-    <column datatype='string'  name='[STATUS]'            role='dimension' type='nominal'
-            caption='Status'/>
-    <column datatype='string'  name='[UNITS]'             role='dimension' type='nominal'
-            caption='Units'/>
-    <column datatype='string'  name='[Subject]'           role='dimension' type='nominal'
-            caption='Subject'/>
-    <column datatype='string'  name='[Group]'             role='dimension' type='nominal'
-            caption='Industry Level (NZSIOC)'/>
-    <column datatype='string'  name='[Series_title_1]'    role='dimension' type='nominal'
-            caption='Financial Variable'/>
-    <column datatype='string'  name='[Series_title_2]'    role='dimension' type='nominal'
-            caption='Industry'/>
-    <column datatype='string'  name='[Series_title_3]'    role='dimension' type='nominal'
-            caption='Price Type'/>
-    <column datatype='string'  name='[Series_title_4]'    role='dimension' type='nominal'
-            caption='Adjustment Method'/>
+  <!-- Medidas -->
+  <column datatype='real'    name='[Data_value]'        role='measure'   type='quantitative'
+          caption='Value (NZD Millions)'/>
+  <column datatype='integer' name='[Magnitude]'         role='measure'   type='quantitative'
+          caption='Magnitude'/>
 
-    <!-- Medidas -->
-    <column datatype='real'    name='[Data_value]'        role='measure'   type='quantitative'
-            caption='Value (NZD Millions)'/>
-    <column datatype='integer' name='[Magnitude]'         role='measure'   type='quantitative'
-            caption='Magnitude'/>
-
-  </datasource>
-</workbook>
+</datasource>
 ```
 
 > **Nota Mac/Linux:** En `filename` usa barras `/` y la ruta absoluta de tu sistema, por ejemplo `/Users/nombre/data/business-financial-data-december-2025-quarter.csv`
