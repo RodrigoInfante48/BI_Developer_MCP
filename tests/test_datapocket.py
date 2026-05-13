@@ -30,6 +30,8 @@ from src.datapocket_mcp import (
     ParseError,
     TableauConnectionInput,
     datapocket_tableau_setup,
+    LookerConnectionInput,
+    datapocket_looker_setup,
 )
 
 # ──────────────────────────────────────────────
@@ -355,3 +357,66 @@ def test_tableau_setup_no_yoy_without_date():
     assert "RANK_DENSE" in result
     assert "Tableau Public" in result
     assert "$75" in result
+
+
+# ──────────────────────────────────────────────
+# Test 24: Looker Setup — LookML files generados
+# ──────────────────────────────────────────────
+
+def test_looker_setup_lookml_files():
+    params = LookerConnectionInput(
+        table_names=["ventas"],
+        schema_name="public",
+        pg_host="localhost",
+        pg_port="5432",
+        pg_database="datapocket",
+        project_name="datapocket",
+        primary_table="ventas",
+        date_column="fecha",
+    )
+    result = asyncio.run(datapocket_looker_setup(params))
+    assert "view: ventas" in result
+    assert 'sql_table_name: "public"."ventas"' in result
+    assert "primary_key: yes" in result
+    assert "measure: count" in result
+    assert "connection: " in result
+    assert 'include: "views/*.lkml"' in result
+    assert "explore: ventas" in result
+
+
+# ──────────────────────────────────────────────
+# Test 25: Looker Setup — dimension_group con date_column
+# ──────────────────────────────────────────────
+
+def test_looker_setup_dimension_group_with_date():
+    params = LookerConnectionInput(
+        table_names=["ventas"],
+        pg_database="datapocket",
+        project_name="datapocket",
+        primary_table="ventas",
+        date_column="fecha",
+    )
+    result = asyncio.run(datapocket_looker_setup(params))
+    assert "dimension_group: fecha" in result
+    assert "timeframes: [date, week, month, quarter, year]" in result
+    assert "datatype: date" in result
+
+
+# ──────────────────────────────────────────────
+# Test 26: Looker Setup — join generado para tablas múltiples + nota de costos
+# ──────────────────────────────────────────────
+
+def test_looker_setup_join_and_cost():
+    params = LookerConnectionInput(
+        table_names=["ventas", "productos"],
+        pg_database="datapocket",
+        project_name="datapocket",
+        primary_table="ventas",
+    )
+    result = asyncio.run(datapocket_looker_setup(params))
+    assert "join: productos" in result
+    assert "type: left_outer" in result
+    assert "relationship: many_to_one" in result
+    assert "Looker" in result
+    assert "$3,000" in result
+    assert "Looker Studio" in result

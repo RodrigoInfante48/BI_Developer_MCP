@@ -1872,7 +1872,312 @@ Pega en **Data Source** → **New Custom SQL**:
 """
 
 
-# ─── Tool 7: Export Data ───
+# ─── Tool 7: Looker Connection ───
+
+class LookerConnectionInput(BaseModel):
+    """Input for generating Looker LookML connection setup."""
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+
+    table_names: List[str] = Field(..., description="List of PostgreSQL table names to connect", min_length=1, max_length=10)
+    schema_name: str = Field(default=DEFAULT_SCHEMA, description="PostgreSQL schema")
+    pg_host: str = Field(default="localhost", description="PostgreSQL host")
+    pg_port: str = Field(default="5432", description="PostgreSQL port")
+    pg_database: str = Field(default="datapocket", description="PostgreSQL database name")
+    project_name: str = Field(default="datapocket", description="Looker project name")
+    primary_table: str = Field(..., description="Main fact/primary table for the Explore")
+    date_column: Optional[str] = Field(default=None, description="Date column for dimension_group with timeframes")
+
+
+@mcp.tool(
+    name="datapocket_looker_setup",
+    annotations={
+        "title": "Generate Looker LookML Setup",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False
+    }
+)
+async def datapocket_looker_setup(params: LookerConnectionInput) -> str:
+    """Generate Looker LookML project setup for PostgreSQL tables.
+
+    Creates complete LookML files (view.lkml, explore.lkml, model.lkml),
+    a PDT derived table, step-by-step setup instructions, and a cost comparison.
+
+    Args:
+        params (LookerConnectionInput): Validated input containing:
+            - table_names (List[str]): Tables to model (1–10)
+            - schema_name (str): PostgreSQL schema
+            - pg_host (str): Database host
+            - pg_port (str): Database port
+            - pg_database (str): Database name
+            - project_name (str): Looker project name
+            - primary_table (str): Fact/main table for the Explore
+            - date_column (Optional[str]): Date column for dimension_group timeframes
+
+    Returns:
+        str: Complete Looker setup guide with LookML files, PDT SQL, instructions, and cost note.
+    """
+    safe_tables = [_sanitize_table_name(t) for t in params.table_names]
+    safe_primary = _sanitize_table_name(params.primary_table)
+    safe_project = _sanitize_table_name(params.project_name)
+    safe_date = _sanitize_table_name(params.date_column) if params.date_column else None
+
+    # ── 1. view.lkml ────────────────────────────────────────────────────────
+    view_blocks = []
+    for table in safe_tables:
+        # Primary key dimension
+        pk_dim = f"""  dimension: id {{
+    type: number
+    primary_key: yes
+    sql: ${{TABLE}}.id ;;
+    description: "Primary key — replace with the actual PK column name if different."
+  }}"""
+
+        # Template string dimensions (categorical)
+        str_dims = f"""
+  dimension: nombre {{
+    type: string
+    sql: ${{TABLE}}.nombre ;;
+    description: "String dimension — duplicate this block for each categorical column."
+  }}
+
+  dimension: categoria {{
+    type: string
+    sql: ${{TABLE}}.categoria ;;
+  }}"""
+
+        # dimension_group for date (uses actual date_column if provided)
+        if safe_date:
+            date_block = f"""
+  dimension_group: {safe_date} {{
+    type: time
+    timeframes: [date, week, month, quarter, year]
+    datatype: date
+    sql: ${{TABLE}}.{safe_date} ;;
+  }}"""
+        else:
+            date_block = f"""
+  # Uncomment and rename to add a date dimension group:
+  # dimension_group: fecha {{
+  #   type: time
+  #   timeframes: [date, week, month, quarter, year]
+  #   datatype: date
+  #   sql: ${{TABLE}}.fecha ;;
+  # }}"""
+
+        # Measures
+        measures = f"""
+  measure: count {{
+    type: count
+    drill_fields: [id, nombre]
+  }}
+
+  measure: total_monto {{
+    type: sum
+    sql: ${{TABLE}}.monto ;;
+    value_format_name: decimal_2
+    description: "Sum — duplicate this block for each numeric column; rename total_<col>."
+  }}
+
+  measure: avg_monto {{
+    type: average
+    sql: ${{TABLE}}.monto ;;
+    value_format_name: decimal_2
+    description: "Average — duplicate this block for each numeric column; rename avg_<col>."
+  }}"""
+
+        view_block = f"""view: {table} {{
+  sql_table_name: "{params.schema_name}"."{table}" ;;
+{pk_dim}{str_dims}{date_block}
+{measures}
+}}"""
+        view_blocks.append(view_block)
+
+    view_lkml = "\n\n".join(view_blocks)
+
+    # ── 2. explore.lkml ─────────────────────────────────────────────────────
+    join_blocks = []
+    for table in safe_tables:
+        if table == safe_primary:
+            continue
+        join_blocks.append(f"""  join: {table} {{
+    type: left_outer
+    relationship: many_to_one
+    sql_on: ${{{safe_primary}.id}} = ${{{table}.id}} ;;
+  }}""")
+
+    joins_section = ("\n\n" + "\n\n".join(join_blocks)) if join_blocks else ""
+
+    explore_lkml = f"""explore: {safe_primary} {{
+  label: "{safe_primary.replace("_", " ").title()} — DataPocket Explore"
+  description: "Main explore for {safe_primary}. Rename label to match your business domain."{joins_section}
+}}"""
+
+    # ── 3. model.lkml ───────────────────────────────────────────────────────
+    model_lkml = f"""connection: "{params.pg_database}"
+
+include: "views/*.lkml"
+
+explore: {safe_primary} {{
+  label: "{safe_primary.replace("_", " ").title()}"
+}}"""
+
+    # ── 4. PDT SQL ──────────────────────────────────────────────────────────
+    date_trunc_col = safe_date if safe_date else "created_at"
+    pdt_sql = f"""-- PDT: pre-aggregated summary for {safe_primary}
+-- Save as views/{safe_primary}_summary.lkml
+
+view: {safe_primary}_summary {{
+  derived_table: {{
+    sql:
+      SELECT
+        DATE_TRUNC('month', {date_trunc_col}) AS periodo,
+        COUNT(*)                              AS total_registros,
+        SUM(monto)                            AS total_monto,
+        AVG(monto)                            AS avg_monto
+      FROM {params.schema_name}.{safe_primary}
+      GROUP BY 1
+      ORDER BY 1
+    ;;
+    persist_for: "24 hours"
+  }}
+
+  dimension_group: periodo {{
+    type: time
+    timeframes: [month, quarter, year]
+    sql: ${{TABLE}}.periodo ;;
+  }}
+
+  measure: total_registros {{
+    type: sum
+    sql: ${{TABLE}}.total_registros ;;
+  }}
+
+  measure: total_monto {{
+    type: sum
+    sql: ${{TABLE}}.total_monto ;;
+    value_format_name: decimal_2
+  }}
+
+  measure: avg_monto {{
+    type: average
+    sql: ${{TABLE}}.avg_monto ;;
+    value_format_name: decimal_2
+  }}
+}}"""
+
+    # ── 5. Setup Instructions ────────────────────────────────────────────────
+    setup_instructions = f"""### Crear el proyecto en Looker
+1. Ve a **Looker Admin** → **Projects** → **New LookML Project**
+2. Nombre del proyecto: `{safe_project}` · Fuente: **Blank Project**
+3. En la configuración de la conexión de la base de datos:
+   - **Name**: `{params.pg_database}`
+   - **Dialect**: PostgreSQL
+   - **Host**: `{params.pg_host}` · **Port**: `{params.pg_port}`
+   - **Database**: `{params.pg_database}`
+   - **Schema**: `{params.schema_name}`
+4. Crea la estructura de archivos:
+   ```
+   {safe_project}/
+   ├── {safe_project}.model.lkml   ← contenido de model.lkml
+   ├── views/
+   │   ├── {safe_primary}.view.lkml   ← view block de la tabla primaria
+   │   └── {safe_primary}_summary.view.lkml   ← PDT (opcional)
+   └── explores/
+       └── {safe_primary}.explore.lkml   ← contenido de explore.lkml
+   ```
+5. Pega el contenido generado en cada archivo correspondiente
+6. Haz clic en **Validate LookML** — corrige cualquier warning antes de hacer deploy
+7. **Deploy to Production** cuando el LookML valide sin errores
+
+### Agregar tablas adicionales
+Para cada tabla extra (`{', '.join(t for t in safe_tables if t != safe_primary) or 'N/A'}`):
+1. Crea `views/<tabla>.view.lkml` con el bloque de view correspondiente
+2. Agrega el bloque `join:` en el explore de `{safe_primary}`
+3. Valida y redeploya
+
+### Personalizar columnas reales
+Reemplaza los nombres de columna de plantilla (`nombre`, `categoria`, `monto`) con
+los nombres reales de tu tabla en PostgreSQL."""
+
+    # ── 6. Cost Note ────────────────────────────────────────────────────────
+    cost_note = """| Plan | Precio estimado | Características | Limitaciones |
+| --- | --- | --- | --- |
+| **Looker Studio** | **$0** | Dashboards web, conectores nativos (BigQuery, Sheets, etc.) | Sin LookML, sin modelado semántico |
+| **Looker Core** | **~$3,000+/mes** (contrato anual) | LookML completo, Git, PDTs, API | Requiere Google Cloud |
+| **Looker Enterprise** | **Precio según negociación** | Multi-cloud, HIPAA, SSO avanzado | Contrato mínimo anual |
+| **Power BI Desktop** | **$0** | DAX, DirectQuery, tablas relacionales | Solo Windows, sin LookML |
+| **Tableau Public** | **$0** | Todas las vizs, publicación pública | Sin PostgreSQL directo |
+
+> 💡 **Stack $0**: Exporta tu data como CSV con `datapocket_export` → carga en **Looker Studio** (gratis) → comparte el link.
+> 🎯 **Alternativa gratuita con PostgreSQL directo**: Power BI Desktop ($0) — usa `datapocket_powerbi_setup`."""
+
+    # ── Assemble output ──────────────────────────────────────────────────────
+    tables_label = ", ".join(f"`{t}`" for t in safe_tables)
+    joins_info = ""
+    if len(safe_tables) > 1:
+        extra = [t for t in safe_tables if t != safe_primary]
+        joins_info = f"\n- **Joins**: {', '.join(f'`{t}`' for t in extra)} → `{safe_primary}` (left_outer, many_to_one)"
+
+    return f"""# 🔍 DataPocket — Looker LookML Setup
+
+## Tablas: {tables_label}
+- **Host**: `{params.pg_host}:{params.pg_port}` · **Database**: `{params.pg_database}` · **Schema**: `{params.schema_name}`
+- **Proyecto**: `{safe_project}` · **Explore principal**: `{safe_primary}`
+- **Columna de fecha**: `{params.date_column or 'No especificada'}`{joins_info}
+
+---
+
+## 1. view.lkml — Vistas por tabla
+Guarda en `views/<tabla>.view.lkml`:
+
+```lookml
+{view_lkml}
+```
+
+---
+
+## 2. explore.lkml — Explore principal
+Guarda en `explores/{safe_primary}.explore.lkml`:
+
+```lookml
+{explore_lkml}
+```
+
+---
+
+## 3. model.lkml — Modelo del proyecto
+Guarda como `{safe_project}.model.lkml`:
+
+```lookml
+{model_lkml}
+```
+
+---
+
+## 4. PDT SQL — Tabla derivada pre-calculada
+Guarda en `views/{safe_primary}_summary.view.lkml`:
+
+```lookml
+{pdt_sql}
+```
+
+---
+
+## 5. Instrucciones de Setup
+
+{setup_instructions}
+
+---
+
+## 6. Costos — Looker Enterprise vs Looker Studio (gratis)
+
+{cost_note}
+"""
+
+
+# ─── Tool 8: Export Data ───
 
 
 class ExportInput(BaseModel):
