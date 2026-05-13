@@ -20,9 +20,8 @@ Reemplaza `C:/ruta/a/tu/carpeta/` con la ruta real donde tengas el CSV en tu má
             version='18.1'
             inline='true'>
 
-  <connection class='text'
-              filename='C:/Users/rodrigoi.NICE_SYSTEMS/OneDrive - NiCE Ltd/Desktop/Tableu/business-financial-data-december-2025-quarter.csv'
-              default-settings='yes'>
+  <connection class='textscan'
+              filename='C:/Users/rodrigoi.NICE_SYSTEMS/OneDrive - NiCE Ltd/Desktop/Tableu/business-financial-data-december-2025-quarter.csv'>
     <format character=',' header='yes' locale='en_NZ' />
     <relation name='business-financial-data-december-2025-quarter.csv'
               table='[business-financial-data-december-2025-quarter#csv]'
