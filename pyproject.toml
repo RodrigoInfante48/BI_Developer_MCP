@@ -1,7 +1,7 @@
 [project]
 name = "datapocket-mcp"
-version = "2.0.0"
-description = "Personal BI agent — turn raw data into mobile-first dashboards via MCP"
+version = "3.0.0"
+description = "Universal BI agent — turn raw data into reports for Power BI, Tableau, Looker, QuickSight via MCP"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [{name = "Rodrigo Infante", email = "rodrigo@dailyduty.co"}]
