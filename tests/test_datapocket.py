@@ -1,7 +1,7 @@
 """
 DataPocket MCP v2 — Test Suite
 Covers parsing, type inference, SQL generation, dashboard generation,
-smart formatting, format detection, transforms, and exports.
+smart formatting, format detection, transforms, exports, and Tableau setup.
 """
 
 import sys
@@ -10,6 +10,8 @@ import pytest
 
 # Make src importable from tests/
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+import asyncio
 
 from src.datapocket_mcp import (
     _parse_csv_data,
@@ -26,6 +28,8 @@ from src.datapocket_mcp import (
     _detect_and_decode,
     DataSourceType,
     ParseError,
+    TableauConnectionInput,
+    datapocket_tableau_setup,
 )
 
 # ──────────────────────────────────────────────
@@ -287,3 +291,67 @@ def test_export_csv_to_json():
     assert len(parsed) == 2
     assert parsed[0]["producto"] == "Widget A"
     assert parsed[1]["ventas"] == "12000"
+
+
+# ──────────────────────────────────────────────
+# Test 21: Tableau Setup — TDS XML generado correctamente
+# ──────────────────────────────────────────────
+
+def test_tableau_setup_tds_xml():
+    params = TableauConnectionInput(
+        table_names=["ventas"],
+        schema_name="public",
+        pg_host="localhost",
+        pg_port="5432",
+        pg_database="datapocket",
+        date_column="fecha",
+        measure_columns=["revenue"],
+        dimension_columns=["categoria", "region"],
+    )
+    result = asyncio.run(datapocket_tableau_setup(params))
+    assert "<?xml version='1.0'" in result
+    assert "class='postgres'" in result
+    assert "dbname='datapocket'" in result
+    assert '[public].[ventas]' in result
+    assert 'role="measure"' in result
+    assert 'role="dimension"' in result
+    assert 'datatype="date"' in result
+
+
+# ──────────────────────────────────────────────
+# Test 22: Tableau Setup — Calculated fields incluyen YoY cuando hay date_column
+# ──────────────────────────────────────────────
+
+def test_tableau_setup_calculated_fields_with_date():
+    params = TableauConnectionInput(
+        table_names=["ventas"],
+        measure_columns=["revenue"],
+        dimension_columns=["categoria"],
+        date_column="fecha",
+    )
+    result = asyncio.run(datapocket_tableau_setup(params))
+    assert "RUNNING_SUM" in result
+    assert "WINDOW_AVG" in result
+    assert "RANK_DENSE" in result
+    assert "FIXED" in result
+    assert "LOOKUP" in result
+    assert "YoY Growth" in result
+
+
+# ──────────────────────────────────────────────
+# Test 23: Tableau Setup — Sin date_column no genera YoY Growth
+# ──────────────────────────────────────────────
+
+def test_tableau_setup_no_yoy_without_date():
+    params = TableauConnectionInput(
+        table_names=["productos"],
+        measure_columns=["precio"],
+        dimension_columns=["categoria"],
+        date_column=None,
+    )
+    result = asyncio.run(datapocket_tableau_setup(params))
+    assert "YoY Growth" not in result
+    assert "RUNNING_SUM" in result
+    assert "RANK_DENSE" in result
+    assert "Tableau Public" in result
+    assert "$75" in result
