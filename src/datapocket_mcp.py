@@ -19,7 +19,7 @@ import os
 import csv
 import io
 import hashlib
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List, Dict, Any, Tuple, Literal
 from enum import Enum
 from datetime import datetime
 
@@ -2177,7 +2177,478 @@ Guarda en `views/{safe_primary}_summary.view.lkml`:
 """
 
 
-# ─── Tool 8: Export Data ───
+# ─── Tool 8: QuickSight Connection ───
+
+
+class QuickSightConnectionInput(BaseModel):
+    """Input for generating Amazon QuickSight connection setup."""
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+
+    table_names: List[str] = Field(..., description="Tables to connect (1–20)", min_length=1, max_length=20)
+    source_type: Literal["postgresql", "s3", "athena", "redshift"] = Field(
+        default="postgresql", description="AWS data source type"
+    )
+    aws_region: str = Field(default="us-east-1", description="AWS region")
+    aws_account_id: str = Field(..., description="AWS Account ID (12 digits)")
+    database_name: str = Field(..., description="Database name")
+    schema_name: str = Field(default=DEFAULT_SCHEMA, description="Schema name")
+    s3_bucket: Optional[str] = Field(default=None, description="S3 bucket (required for s3/athena source)")
+    measure_columns: Optional[List[str]] = Field(default=None, description="Numeric columns for calculated fields")
+    date_column: Optional[str] = Field(default=None, description="Date column for temporal calculations")
+
+
+@mcp.tool(
+    name="datapocket_quicksight_setup",
+    annotations={
+        "title": "Generate Amazon QuickSight Setup",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False
+    }
+)
+async def datapocket_quicksight_setup(params: QuickSightConnectionInput) -> str:
+    """Generate Amazon QuickSight connection setup for multiple data sources.
+
+    Creates manifest JSON, dataset configuration, calculated fields, IAM policy,
+    AWS CLI commands, step-by-step instructions, and a cost comparison.
+
+    Args:
+        params (QuickSightConnectionInput): Validated input containing:
+            - table_names (List[str]): Tables to connect (1–20)
+            - source_type (str): postgresql | s3 | athena | redshift
+            - aws_region (str): AWS region (default us-east-1)
+            - aws_account_id (str): 12-digit AWS Account ID
+            - database_name (str): Database name
+            - schema_name (str): Schema (default public)
+            - s3_bucket (Optional[str]): Required for s3/athena sources
+            - measure_columns (Optional[List[str]]): Numeric columns
+            - date_column (Optional[str]): Date column for temporal fields
+
+    Returns:
+        str: Complete QuickSight setup guide with JSON configs, IAM policy, CLI commands, and cost note.
+    """
+    safe_tables = [_sanitize_table_name(t) for t in params.table_names]
+    primary_table = safe_tables[0]
+    measure = params.measure_columns[0] if params.measure_columns else "monto"
+    dim = safe_tables[0]
+    safe_date = _sanitize_table_name(params.date_column) if params.date_column else None
+    bucket = params.s3_bucket or f"my-{params.database_name}-data"
+
+    # ── 1. Manifest JSON (S3) ────────────────────────────────────────────────
+    manifest_uris = [f"s3://{bucket}/{t}/" for t in safe_tables]
+    manifest_locations = [{"URIPrefixes": [uri]} for uri in manifest_uris]
+    manifest_json = json.dumps(
+        {
+            "fileLocations": manifest_locations,
+            "globalUploadSettings": {
+                "format": "CSV",
+                "delimiter": ",",
+                "containsHeader": "true"
+            }
+        },
+        indent=2
+    )
+
+    # ── 2. Dataset Configuration JSON (CreateDataSet API) ────────────────────
+    datasource_arn = (
+        f"arn:aws:quicksight:{params.aws_region}:{params.aws_account_id}"
+        f":datasource/{params.source_type}-{params.database_name}"
+    )
+
+    physical_table_map: Dict[str, Any] = {}
+    for table in safe_tables:
+        key = f"{table}-physical"
+        if params.source_type == "s3":
+            physical_table_map[key] = {
+                "S3Source": {
+                    "DataSourceArn": datasource_arn,
+                    "UploadSettings": {
+                        "Format": "CSV",
+                        "StartFromRow": 1,
+                        "ContainsHeader": True,
+                        "Delimiter": ","
+                    },
+                    "InputColumns": [
+                        {"Name": "id", "Type": "INTEGER"},
+                        {"Name": measure, "Type": "DECIMAL"},
+                        {"Name": "nombre", "Type": "STRING"},
+                        {"Name": safe_date or "fecha", "Type": "DATETIME"}
+                    ]
+                }
+            }
+        else:
+            physical_table_map[key] = {
+                "RelationalTable": {
+                    "DataSourceArn": datasource_arn,
+                    "Catalog": "ExternalDatabase",
+                    "Schema": params.schema_name,
+                    "Name": table,
+                    "InputColumns": [
+                        {"Name": "id", "Type": "INTEGER"},
+                        {"Name": measure, "Type": "DECIMAL"},
+                        {"Name": "nombre", "Type": "STRING"},
+                        {"Name": safe_date or "fecha", "Type": "DATETIME"}
+                    ]
+                }
+            }
+
+    dataset_config = json.dumps(
+        {
+            "AwsAccountId": params.aws_account_id,
+            "DataSetId": f"dataset-{primary_table}",
+            "Name": primary_table,
+            "ImportMode": "SPICE",
+            "PhysicalTableMap": physical_table_map
+        },
+        indent=2
+    )
+
+    # ── 3. Calculated Fields (5) ─────────────────────────────────────────────
+    calc_pct_total = f"sumOver({{{measure}}}, [{{{primary_table}}}], PRE_AGG) / sumOver({{{measure}}}, [], PRE_AGG)"
+    calc_yoy = (
+        f"(periodToDateSum({{{measure}}}, now(), YEAR) - "
+        f"periodToDateSum({{{measure}}}, addDateTime(-1, 'YYYY', now()), YEAR)) / "
+        f"periodToDateSum({{{measure}}}, addDateTime(-1, 'YYYY', now()), YEAR)"
+    )
+    calc_ifelse = (
+        f"ifelse({{{measure}}} >= 10000, 'Alto', "
+        f"{{{measure}}} >= 5000, 'Medio', 'Bajo')"
+    )
+    calc_date_diff = (
+        f"dateDiff({{{safe_date}}}, now(), 'DD')"
+        if safe_date
+        else "# date_column not provided — add your date column to enable this field"
+    )
+    calc_rank = f"rank([{{{measure}}} DESC], [], PRE_AGG)"
+
+    calc_fields_section = f"""### Calculated Field 1 — % del Total
+```
+{calc_pct_total}
+```
+
+### Calculated Field 2 — YoY Growth (Year-over-Year)
+```
+{calc_yoy}
+```
+
+### Calculated Field 3 — Clasificación Condicional
+```
+{calc_ifelse}
+```
+
+### Calculated Field 4 — Diferencia de Fechas (días desde {safe_date or 'fecha'})
+```
+{calc_date_diff}
+```
+
+### Calculated Field 5 — Ranking por {measure}
+```
+{calc_rank}
+```"""
+
+    # ── 4. IAM Policy JSON ───────────────────────────────────────────────────
+    if params.source_type == "s3":
+        iam_statements = [
+            {
+                "Sid": "QuickSightS3Read",
+                "Effect": "Allow",
+                "Action": ["s3:GetObject", "s3:ListBucket"],
+                "Resource": [
+                    f"arn:aws:s3:::{bucket}",
+                    f"arn:aws:s3:::{bucket}/*"
+                ]
+            }
+        ]
+    elif params.source_type == "athena":
+        iam_statements = [
+            {
+                "Sid": "QuickSightAthenaRead",
+                "Effect": "Allow",
+                "Action": [
+                    "athena:StartQueryExecution",
+                    "athena:GetQueryExecution",
+                    "athena:GetQueryResults",
+                    "athena:StopQueryExecution",
+                    "athena:ListTableMetadata"
+                ],
+                "Resource": f"arn:aws:athena:{params.aws_region}:{params.aws_account_id}:workgroup/primary"
+            },
+            {
+                "Sid": "QuickSightGlueRead",
+                "Effect": "Allow",
+                "Action": ["glue:GetTable", "glue:GetDatabase", "glue:GetPartitions"],
+                "Resource": [
+                    f"arn:aws:glue:{params.aws_region}:{params.aws_account_id}:catalog",
+                    f"arn:aws:glue:{params.aws_region}:{params.aws_account_id}:database/{params.database_name}",
+                    f"arn:aws:glue:{params.aws_region}:{params.aws_account_id}:table/{params.database_name}/*"
+                ]
+            },
+            {
+                "Sid": "QuickSightS3Athena",
+                "Effect": "Allow",
+                "Action": ["s3:GetObject", "s3:ListBucket", "s3:PutObject"],
+                "Resource": [
+                    f"arn:aws:s3:::{bucket}",
+                    f"arn:aws:s3:::{bucket}/*"
+                ]
+            }
+        ]
+    elif params.source_type == "redshift":
+        iam_statements = [
+            {
+                "Sid": "QuickSightRedshiftAccess",
+                "Effect": "Allow",
+                "Action": [
+                    "redshift:GetClusterCredentials",
+                    "redshift:DescribeClusters",
+                    "redshift-data:ExecuteStatement",
+                    "redshift-data:GetStatementResult"
+                ],
+                "Resource": (
+                    f"arn:aws:redshift:{params.aws_region}:{params.aws_account_id}"
+                    f":dbuser:{params.database_name}/quicksight"
+                )
+            }
+        ]
+    else:  # postgresql / RDS
+        iam_statements = [
+            {
+                "Sid": "QuickSightRDSAccess",
+                "Effect": "Allow",
+                "Action": [
+                    "rds:DescribeDBInstances",
+                    "rds:DescribeDBClusters",
+                    "rds-db:connect"
+                ],
+                "Resource": (
+                    f"arn:aws:rds:{params.aws_region}:{params.aws_account_id}"
+                    f":db:{params.database_name}"
+                )
+            },
+            {
+                "Sid": "QuickSightVPCAccess",
+                "Effect": "Allow",
+                "Action": [
+                    "ec2:DescribeSubnets",
+                    "ec2:DescribeSecurityGroups",
+                    "ec2:DescribeVpcs"
+                ],
+                "Resource": "*"
+            }
+        ]
+
+    iam_policy = json.dumps(
+        {
+            "Version": "2012-10-17",
+            "Statement": iam_statements
+        },
+        indent=2
+    )
+
+    # ── 5. AWS CLI Commands ──────────────────────────────────────────────────
+    if params.source_type == "s3":
+        datasource_cli_params = json.dumps({
+            "DataSourceParameters": {
+                "S3Parameters": {
+                    "ManifestFileLocation": {
+                        "Bucket": bucket,
+                        "Key": "manifest.json"
+                    }
+                }
+            }
+        }, indent=4)
+    elif params.source_type == "athena":
+        datasource_cli_params = json.dumps({
+            "DataSourceParameters": {
+                "AthenaParameters": {
+                    "WorkGroup": "primary"
+                }
+            }
+        }, indent=4)
+    elif params.source_type == "redshift":
+        datasource_cli_params = json.dumps({
+            "DataSourceParameters": {
+                "RedshiftParameters": {
+                    "Host": f"{params.database_name}.{params.aws_account_id}.{params.aws_region}.redshift.amazonaws.com",
+                    "Port": 5439,
+                    "Database": params.database_name
+                }
+            }
+        }, indent=4)
+    else:
+        datasource_cli_params = json.dumps({
+            "DataSourceParameters": {
+                "RdsParameters": {
+                    "InstanceId": params.database_name,
+                    "Database": params.database_name
+                }
+            }
+        }, indent=4)
+
+    cli_commands = f"""# 1. Crear el DataSource
+aws quicksight create-data-source \\
+  --aws-account-id {params.aws_account_id} \\
+  --data-source-id {params.source_type}-{params.database_name} \\
+  --name "{params.database_name} ({params.source_type.upper()})" \\
+  --type {params.source_type.upper().replace("POSTGRESQL", "POSTGRESQL")} \\
+  --region {params.aws_region} \\
+  --data-source-parameters '{datasource_cli_params}'
+
+# 2. Crear el DataSet (SPICE)
+aws quicksight create-data-set \\
+  --aws-account-id {params.aws_account_id} \\
+  --region {params.aws_region} \\
+  --cli-input-json file://dataset-{primary_table}.json
+
+# 3. Verificar estado de ingesta SPICE
+aws quicksight describe-ingestion \\
+  --aws-account-id {params.aws_account_id} \\
+  --data-set-id dataset-{primary_table} \\
+  --ingestion-id initial-ingestion \\
+  --region {params.aws_region}
+
+# 4. Listar análisis disponibles
+aws quicksight list-analyses \\
+  --aws-account-id {params.aws_account_id} \\
+  --region {params.aws_region}"""
+
+    # ── 6. Step-by-Step Instructions ─────────────────────────────────────────
+    s3_note = (
+        f"\n   - Sube `manifest.json` al bucket `s3://{bucket}/` antes de crear el DataSource."
+        if params.source_type in ("s3", "athena")
+        else ""
+    )
+    tables_label = ", ".join(f"`{t}`" for t in safe_tables)
+
+    instructions = f"""### Paso 1 — Requisitos previos
+1. Cuenta AWS activa con QuickSight habilitado (Standard o Enterprise)
+2. IAM role/policy aplicada (ver sección IAM Policy más abajo){s3_note}
+3. Si usas VPC (RDS/Redshift), configura **VPC Connection** en QuickSight → Manage QuickSight → VPC connections
+
+### Paso 2 — Crear el DataSource en la consola
+1. Ve a **QuickSight** → menú superior derecho → **Manage QuickSight**
+2. Selecciona **Datasets** → **New dataset**
+3. Elige el conector: **{params.source_type.upper()}**
+4. Rellena:
+   - **Data source name**: `{params.database_name}-{params.source_type}`
+   - **Database / Bucket**: `{params.database_name}`
+   - **Region**: `{params.aws_region}`
+5. Haz clic en **Validate connection** → luego **Create data source**
+
+### Paso 3 — Crear el DataSet
+1. En el DataSource recién creado → **Create dataset**
+2. Selecciona la tabla/prefix: {tables_label}
+3. Elige **Import to SPICE for quicker analytics** (recomendado)
+4. Haz clic en **Edit/Preview data** para revisar columnas
+5. Cambia tipos de datos si es necesario (ej. texto → fecha)
+6. **Save & publish**
+
+### Paso 4 — Agregar Calculated Fields
+1. En el dataset → **Add calculated field**
+2. Pega cada fórmula de la sección "Calculated Fields" de este documento
+3. Asigna nombre descriptivo (ej. `pct_total`, `yoy_growth`, `clasificacion`)
+4. **Save**
+
+### Paso 5 — Crear un Analysis
+1. En el DataSet → **Create analysis**
+2. Arrastra campos al lienzo: columnas + calculated fields
+3. Usa **Visual types**: AutoGraph (recomendado), Bar Chart, Line Chart, KPI
+4. Configura filtros y parámetros
+
+### Paso 6 — Publicar como Dashboard
+1. Analysis → **Share** → **Publish dashboard**
+2. Asigna nombre: `{primary_table.replace("_", " ").title()} Dashboard`
+3. Configura permisos de acceso (Readers)
+4. Comparte el link con stakeholders"""
+
+    # ── 7. Cost Note ─────────────────────────────────────────────────────────
+    cost_note = """| Plan | Precio | Características | Ideal para |
+| --- | --- | --- | --- |
+| **Reader** | **$0.30/sesión** (máx $5/mes) | Solo consumo de dashboards publicados | Stakeholders, directivos |
+| **Author** | **$18/usuario/mes** | Crear datasets, análisis y dashboards | Analistas de datos |
+| **Author Pro** | **$28/usuario/mes** | Todo Author + Paginated Reports, forecasting avanzado | Reportes financieros |
+| **Enterprise** | **desde $250/mes** (mín. 4 usuarios) | ML Insights, Q&A en lenguaje natural, row-level security | Equipos BI grandes |
+| **Enterprise + Q** | **+$250/mes** | QuickSight Q (NLQ) habilitado para todos los readers | Self-service analytics |
+
+> 💡 **Stack mínimo recomendado**: 1 Author ($18/mes) + Readers a $0.30/sesión.
+> Con 10 readers consumiendo 5 sesiones/mes = $15 en readers + $18 author = **$33/mes total**.
+>
+> 🎯 **Comparativa**: Tableau Cloud ($75/user/mo) · Power BI Pro ($10/user/mo) · Looker ($3,000+/mo).
+> QuickSight es el más económico del ecosistema enterprise para equipos pequeños."""
+
+    # ── Assemble output ──────────────────────────────────────────────────────
+    manifest_section = ""
+    if params.source_type in ("s3", "athena"):
+        manifest_section = f"""## 1. Manifest JSON — S3 File Locations
+Guarda como `s3://{bucket}/manifest.json`:
+
+```json
+{manifest_json}
+```
+
+---
+
+"""
+
+    dataset_section_num = "2" if params.source_type in ("s3", "athena") else "1"
+
+    return f"""# ☁️ DataPocket — Amazon QuickSight Setup
+
+## Fuente: `{params.source_type.upper()}` · Región: `{params.aws_region}` · Cuenta: `{params.aws_account_id}`
+- **Tablas**: {tables_label}
+- **Base de datos**: `{params.database_name}` · **Schema**: `{params.schema_name}`
+- **Columna de medida**: `{measure}` · **Columna de fecha**: `{params.date_column or 'No especificada'}`
+
+---
+
+{manifest_section}## {dataset_section_num}. Dataset Configuration JSON (CreateDataSet API)
+Guarda como `dataset-{primary_table}.json` para usar con AWS CLI:
+
+```json
+{dataset_config}
+```
+
+---
+
+## {int(dataset_section_num) + 1}. Calculated Fields — Sintaxis QuickSight Nativa
+
+{calc_fields_section}
+
+---
+
+## {int(dataset_section_num) + 2}. IAM Policy — Mínimo Privilegio para QuickSight
+
+```json
+{iam_policy}
+```
+
+> Adjunta esta policy al IAM role que usa QuickSight para acceder a tu fuente de datos.
+> En la consola: IAM → Roles → quicksight-role → Add permissions → Create inline policy.
+
+---
+
+## {int(dataset_section_num) + 3}. AWS CLI Commands
+
+```bash
+{cli_commands}
+```
+
+---
+
+## {int(dataset_section_num) + 4}. Instrucciones Paso a Paso (Consola AWS)
+
+{instructions}
+
+---
+
+## {int(dataset_section_num) + 5}. Costos — QuickSight Reader vs Author vs Enterprise
+
+{cost_note}
+"""
+
+
+# ─── Tool 9: Export Data ───
 
 
 class ExportInput(BaseModel):
