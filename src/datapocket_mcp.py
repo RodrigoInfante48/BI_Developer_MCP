@@ -8,8 +8,12 @@ Turn Claude into a personal Business Intelligence agent that:
 3. Loads it into PostgreSQL
 4. Generates mobile-first HTML dashboards
 5. Exports data in multiple formats
+6. Generates Power BI Desktop connection setup with M code and DAX measures (datapocket_powerbi_setup)
+7. Generates Tableau Desktop .tds XML + LOD calculated fields (datapocket_tableau_setup)
+8. Generates Looker/LookML views, models, and explores (datapocket_looker_setup)
+9. Generates Amazon QuickSight manifest JSON, dataset config, and IAM policy (datapocket_quicksight_setup)
 
-Stack: Python + PostgreSQL + Power BI (local) — zero licensing costs.
+Stack: Python + PostgreSQL + Power BI / Tableau / Looker / QuickSight — universal BI coverage.
 Product by DailyDuty / Instituto para el Desarrollo Diario.
 Version: 2.0.0
 """
