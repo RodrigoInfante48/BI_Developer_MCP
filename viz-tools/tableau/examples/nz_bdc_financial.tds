@@ -4,8 +4,13 @@
             version='18.1'
             inline='true'>
 
+  <!-- EDITA SOLO directory: pon la carpeta donde tienes el CSV -->
   <connection class='textscan'
-              filename='business-financial-data-december-2025-quarter.csv'>
+              directory='C:/Users/rodrigoi.NICE_SYSTEMS/OneDrive - NiCE Ltd/Desktop/Tableu'
+              filename='business-financial-data-december-2025-quarter.csv'
+              server=''
+              channel=''
+              port=''>
     <format character=',' header='yes' locale='en_NZ' />
     <relation name='business-financial-data-december-2025-quarter.csv'
               table='[business-financial-data-december-2025-quarter#csv]'
