@@ -1798,29 +1798,141 @@ def _generate_tableau_csv_setup(params: TableauConnectionInput) -> str:
 | Dos Medidas | Scatter Plot | Detecta correlaciones |"""
 
     # ── 5. Step-by-Step Instructions ────────────────────────────────────────
-    instructions = f"""### Conectar el CSV en Tableau Desktop
-1. Abre **Tableau Desktop** → **Connect** → **To a File** → **Text file**
-2. Navega a `{params.csv_file_path}` y selecciónalo
-3. Tableau detectará automáticamente el separador (`,`) y los headers
-4. Arrastra la tabla `{filename}` al área de trabajo
-5. Guarda el datasource como `{stem}.tds` para reutilizar: **Data** → **{stem}** → **Add to Saved Data Sources**
-6. Para usar el `.tds` directamente: copia el XML de arriba a un archivo `{stem}.tds` y ábrelo con doble clic
+    instructions = f"""### Opción A — Abrir el .tds directamente (más rápido)
+El archivo `.tds` de arriba ya tiene `directory` y `filename` separados, que es
+exactamente lo que Tableau necesita para leer un CSV sin errores.
 
-### Tableau Public (gratuito)
-1. Descarga **Tableau Public** (gratis) desde public.tableau.com
-2. **Connect** → **Text file** → selecciona `{filename}`
-3. Diseña tu viz y publica gratis en Tableau Public Gallery"""
+1. Copia todo el XML de la sección anterior y pégalo en un editor de texto (Notepad, VS Code, etc.)
+2. Guárdalo como **`{stem}.tds`** — asegúrate de que la extensión sea `.tds`, no `.txt`
+3. Edita el atributo `directory` con la carpeta exacta donde está tu archivo:
+   ```
+   directory='{directory}'
+   ```
+   > En Windows usa barras `/` o barras dobles `\\\\` — Tableau acepta ambas.
+   > Ejemplo válido: `C:/Users/TuNombre/Documents/datos`
+4. Haz **doble clic** en el archivo `{stem}.tds` — Tableau Desktop lo abrirá directamente
+5. Verás la tabla `{filename}` ya cargada en el panel izquierdo lista para arrastrar
 
-    # ── 6. Cost Note ────────────────────────────────────────────────────────
-    cost_note = """| Plan | Precio | CSV directo | Limitaciones |
+### Opción B — Conectar manualmente desde Tableau Desktop
+Usa esta opción si prefieres el flujo visual:
+
+1. Abre **Tableau Desktop** → pantalla de inicio → sección **Connect**
+2. En la columna **To a File** haz clic en **Text file**
+   > Si no ves "Text file", busca en **More...** al final de la lista
+3. En el explorador de archivos navega a:
+   ```
+   {directory}
+   ```
+   Selecciona **`{filename}`** y haz clic en **Open**
+4. Tableau abre la pantalla **Data Source**. Verifica:
+   - El separador detectado debe ser **Coma (,)**. Si no, haz clic en el ícono de llave
+     inglesa (⚙️) arriba a la derecha → cambia **Field Separator** a **Comma**
+   - La primera fila debe mostrar los nombres de columna, no datos. Si no,
+     activa **Use Data Interpreter** en el panel izquierdo
+5. Arrastra la tabla **`{filename}`** desde el panel izquierdo al área central
+   (donde dice "Drag tables here")
+6. Haz clic en la pestaña **Sheet 1** al fondo para empezar a construir tu viz
+7. **Guarda el datasource** para reutilizarlo sin reconectar:
+   - Menú **Data** → **`{stem}`** → **Add to Saved Data Sources...**
+   - Esto genera un `.tds` en tu carpeta `My Tableau Repository/Datasources`
+
+### Opción C — Tableau Public (gratis, sin instalación de pago)
+Tableau Public es idéntico a Desktop para CSVs pero gratis:
+
+1. Descarga desde **public.tableau.com** → Get Tableau Public (botón azul)
+2. Instala y abre → **Connect** → **Text file** → selecciona `{filename}`
+3. Sigue los mismos pasos que la Opción B desde el punto 4
+4. Al terminar: **File** → **Save to Tableau Public** para publicar gratis
+   > Tus datos quedan visibles públicamente — no uses datos confidenciales"""
+
+    # ── 6. Best Practices ───────────────────────────────────────────────────
+    best_practices = f"""### Antes de conectar — prepara el archivo
+- **Ruta estable**: Mueve `{filename}` a una carpeta permanente (ej: `Documents/tableau-data/`),
+  no en Downloads ni Desktop. Si cambias la ruta deberás editar el `.tds`.
+- **Codificación UTF-8**: Ábrelo en Excel → Guardar como → CSV UTF-8 (con BOM).
+  Esto evita que tildes y ñ aparezcan como caracteres extraños.
+- **Sin espacios en el nombre**: Si el nombre tiene espacios, renómbralo con guiones
+  (`mi-archivo.csv`). Tableau los acepta pero evita confusiones en la ruta.
+- **Headers limpios**: Los nombres de columna no deben empezar con número ni tener
+  caracteres especiales (`#`, `%`, `(`, `)`). Renómbralos antes de cargar.
+- **Filas vacías al inicio**: Si el CSV tiene filas de título o metadatos antes del
+  header real, elimínalas — Tableau lee desde la primera fila.
+
+### Durante la conexión
+- **Revisa los tipos detectados** en la pantalla Data Source: Tableau muestra `Abc`
+  (string), `#` (número) o un ícono de calendario (fecha) debajo de cada columna.
+  Si una columna numérica aparece como `Abc`, haz clic en el ícono y cámbiala a **Number**.
+- **Renombra columnas en Tableau** (sin tocar el CSV): doble clic sobre el nombre de la
+  columna en Data Source → escribe el nombre amigable. Esto se guarda en el `.tds`.
+- **Oculta columnas innecesarias**: clic derecho sobre la columna → **Hide**.
+  Hace la viz más limpia y mejora el rendimiento.
+- **Crea un Extract (.hyper)** si el CSV tiene más de 100 000 filas:
+  Data Source → esquina superior derecha → **Extract** → **Create Extract**.
+  Un extract carga los datos en memoria y hace los filtros mucho más rápidos.
+
+### Al construir la visualización
+- **Dimensiones van a Rows/Columns, Medidas van a Marks o a Size/Color**.
+  Si arrastras una medida a Rows Tableau la suma automáticamente.
+- **Para ver valores individuales** (sin agregar): clic derecho sobre la medida
+  en el estante → **Dimension** (desactiva la agregación).
+- **Filtros antes de la viz**: usa la tarjeta **Filters** para limitar fechas o
+  categorías antes de construir — evita que Tableau cargue datos que no necesitas.
+- **Guarda frecuentemente** con Ctrl+S. Tableau guarda el `.twb` (workbook)
+  separado del `.tds` (datasource)."""
+
+    # ── 7. Troubleshooting ──────────────────────────────────────────────────
+    troubleshooting = f"""### Error: Tableau no encuentra el archivo al abrir el .tds
+**Causa**: El atributo `directory` en el XML no coincide con la carpeta actual del CSV.
+**Fix**: Abre el `.tds` en un editor de texto → cambia `directory='...'` por la ruta
+correcta → guarda → vuelve a abrirlo en Tableau.
+
+### Error: Los números aparecen como texto (Abc en vez de #)
+**Causa**: El CSV tiene comas como separador de miles (`1,234`) o usa punto y coma
+como separador de campo.
+**Fix**: En Data Source → ícono ⚙️ → **Field Separator** → selecciona el separador
+correcto. Para miles, aplica un `FLOAT(REPLACE([columna], ",", ""))` como campo calculado.
+
+### Error: Las fechas no se reconocen
+**Causa**: El formato de fecha no es estándar (ej: `15/03/2024` en vez de `2024-03-15`).
+**Fix**: En Data Source → haz clic en el ícono de tipo bajo la columna de fecha →
+**Date** → Tableau preguntará el formato → selecciona el que corresponde.
+Alternativa: campo calculado `DATE(DATEPARSE("dd/MM/yyyy", [columna_fecha]))`.
+
+### Error: Tildes y ñ aparecen como símbolos raros
+**Causa**: El CSV está en Latin-1 / Windows-1252, no en UTF-8.
+**Fix**: Abre el CSV en Notepad++ → Encoding → Convert to UTF-8 with BOM → guarda.
+Si no tienes Notepad++: Excel → Guardar como → CSV UTF-8 (con BOM).
+
+### Error: "Error 88A6ADA0" o Tableau no carga el datasource
+**Causa**: El path completo estaba en el atributo `filename` en vez de separar
+`directory` y `filename`. El `.tds` generado por esta herramienta ya lo corrige.
+**Fix**: Verifica que el XML del `.tds` tenga ambos atributos por separado:
+```xml
+<connection class='textscan'
+            directory='{directory}'
+            filename='{filename}'>
+```
+
+### Columnas no aparecen en el panel de Tableau
+**Causa**: La columna puede estar oculta o Tableau no detectó el tipo correctamente.
+**Fix**: En Data Source, esquina superior derecha → **Show Hidden Fields**.
+Si la columna sigue sin aparecer, revisa que el header del CSV no tenga espacios
+al inicio ni al final (trim en Excel: `=TRIM(A1)`)."""
+
+    # ── 8. Cost Note ────────────────────────────────────────────────────────
+    cost_note = """| Plan | Precio | CSV directo | Limitaciones clave |
 | --- | --- | --- | --- |
-| **Tableau Public** | **$0** | ✅ Sí | Datos públicos, sin servidor |
-| **Tableau Creator** | **$75/user/mes** | ✅ Sí | Precio por usuario |
-| **Tableau Explorer** | **$42/user/mes** | ✅ Sí (web) | Requiere al menos 1 Creator |
-| **Tableau Viewer** | **$15/user/mes** | ❌ Solo lectura | Sin edición |
+| **Tableau Public** | **$0** | ✅ Sí | Datos públicos; sin conexión a BD |
+| **Tableau Creator** | **$75/user/mes** | ✅ Sí | Todo incluido; precio por usuario |
+| **Tableau Explorer** | **$42/user/mes** | ✅ Solo web | Requiere al menos 1 Creator en la org |
+| **Tableau Viewer** | **$15/user/mes** | ❌ | Solo lectura de dashboards publicados |
 
-> 💡 **Stack $0**: CSV + Tableau Public = análisis profesional sin costo.
-> 🎯 **Alternativa gratuita**: Power BI Desktop ($0) también conecta CSV — usa `datapocket_powerbi_setup`."""
+> **Recomendación para empezar**: usa **Tableau Public** con tu CSV — es idéntico a
+> Creator para fuentes de archivo. Cuando necesites conectar a bases de datos o
+> mantener datos privados, considera Creator.
+>
+> **Alternativa $0 con datos privados**: Power BI Desktop conecta CSV y no publica
+> nada públicamente — usa `datapocket_powerbi_setup` para el paquete equivalente."""
 
     m_names = ', '.join('`' + c['name'] + '`' for c in measures[:5])
     d_names = ', '.join('`' + c['name'] + '`' for c in dims[:5])
@@ -1836,7 +1948,12 @@ def _generate_tableau_csv_setup(params: TableauConnectionInput) -> str:
 ---
 
 ## 1. Archivo .tds (Tableau Datasource XML)
-Guarda como `{stem}.tds` y ábrelo directamente en Tableau Desktop:
+
+El `.tds` usa `class='textscan'` con `directory` y `filename` como atributos
+separados — esta es la estructura que Tableau requiere para CSVs. Poner la ruta
+completa en `filename` causa el error `88A6ADA0`; este archivo lo evita.
+
+Guarda el XML como **`{stem}.tds`** (extensión `.tds`, no `.txt`):
 
 ```xml
 {tds_xml}
@@ -1844,25 +1961,41 @@ Guarda como `{stem}.tds` y ábrelo directamente en Tableau Desktop:
 
 ---
 
-## 2. Calculated Fields (sintaxis Tableau nativa)
-Crea estos campos en **Analysis → Create Calculated Field**:
-{calc_fields_section}{yoy_note}
-
----
-
-## 3. Recomendaciones de Visualización
-
-{viz_recs}
-
----
-
-## 4. Instrucciones de Conexión
+## 2. Instrucciones de Conexión Paso a Paso
 
 {instructions}
 
 ---
 
-## 5. Costos — Tableau Public vs Licencias
+## 3. Calculated Fields (sintaxis Tableau nativa)
+
+Crea cada uno en **Analysis → Create Calculated Field** (o clic derecho en el
+panel de datos → **Create Calculated Field**). El nombre que pongas aparecerá
+como una nueva columna en tu viz.
+
+{calc_fields_section}{yoy_note}
+
+---
+
+## 4. Buenas Prácticas
+
+{best_practices}
+
+---
+
+## 5. Solución de Errores Comunes
+
+{troubleshooting}
+
+---
+
+## 6. Recomendaciones de Visualización
+
+{viz_recs}
+
+---
+
+## 7. Costos — Tableau Public vs Licencias
 
 {cost_note}
 """
