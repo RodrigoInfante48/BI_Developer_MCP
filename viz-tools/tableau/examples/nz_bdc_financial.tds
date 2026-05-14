@@ -5,7 +5,7 @@
             inline='true'>
 
   <connection class='textscan'
-              filename='C:/Users/rodrigoi.NICE_SYSTEMS/OneDrive - NiCE Ltd/Desktop/Tableu/business-financial-data-december-2025-quarter.csv'>
+              filename='business-financial-data-december-2025-quarter.csv'>
     <format character=',' header='yes' locale='en_NZ' />
     <relation name='business-financial-data-december-2025-quarter.csv'
               table='[business-financial-data-december-2025-quarter#csv]'
