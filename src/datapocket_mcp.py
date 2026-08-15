@@ -22,12 +22,13 @@ import json
 import os
 import csv
 import io
+import re
 import hashlib
 from typing import Optional, List, Dict, Any, Tuple, Literal
 from enum import Enum
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 from mcp.server.fastmcp import FastMCP, Context
 
 try:
@@ -1604,11 +1605,69 @@ Running Total = CALCULATE([Total Revenue], FILTER(ALL('Calendar'[Date]), 'Calend
 
 # ─── Tool 6: Tableau Connection ───
 
+def _parse_csv_path(csv_file_path: str) -> Tuple[str, str]:
+    """Split a CSV path (Windows or Unix) into (directory, filename)."""
+    normalized = csv_file_path.replace('\\', '/')
+    if '/' in normalized:
+        directory, filename = normalized.rsplit('/', 1)
+    else:
+        directory, filename = '.', normalized
+    return directory, filename
+
+
+def _infer_column_type(values: List[str]) -> Dict[str, str]:
+    """Infer Tableau datatype/role/type from a list of sample string values."""
+    non_empty = [v.strip() for v in values if v.strip()]
+    if not non_empty:
+        return {'datatype': 'string', 'role': 'dimension', 'type': 'nominal'}
+    try:
+        for v in non_empty:
+            int(v)
+        return {'datatype': 'integer', 'role': 'measure', 'type': 'quantitative'}
+    except ValueError:
+        pass
+    try:
+        for v in non_empty:
+            float(v)
+        return {'datatype': 'real', 'role': 'measure', 'type': 'quantitative'}
+    except ValueError:
+        pass
+    date_pat = re.compile(r'^\d{4}[-/]\d{2}([-/]\d{2})?$')
+    if all(date_pat.match(v) for v in non_empty):
+        return {'datatype': 'date', 'role': 'dimension', 'type': 'ordinal'}
+    return {'datatype': 'string', 'role': 'dimension', 'type': 'nominal'}
+
+
+def _infer_csv_columns(csv_file_path: str) -> List[Dict[str, str]]:
+    """Read CSV headers and infer Tableau column types from up to 20 data rows."""
+    columns: List[Dict[str, str]] = []
+    try:
+        with open(csv_file_path, newline='', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f)
+            headers = list(reader.fieldnames or [])
+            rows: List[Dict[str, str]] = []
+            for i, row in enumerate(reader):
+                if i >= 20:
+                    break
+                rows.append(dict(row))
+        for col in headers:
+            values = [str(row.get(col, '')) for row in rows]
+            col_type = _infer_column_type(values)
+            columns.append({'name': col, **col_type})
+    except (OSError, csv.Error):
+        pass
+    return columns
+
+
 class TableauConnectionInput(BaseModel):
     """Input for generating Tableau connection setup."""
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
 
-    table_names: List[str] = Field(..., description="List of PostgreSQL table names to connect", min_length=1, max_length=20)
+    table_names: Optional[List[str]] = Field(
+        default=None,
+        description="List of PostgreSQL table names to connect (required when csv_file_path is not provided)",
+        max_length=20,
+    )
     schema_name: str = Field(default=DEFAULT_SCHEMA, description="PostgreSQL schema")
     pg_host: str = Field(default="localhost", description="PostgreSQL host")
     pg_port: str = Field(default="5432", description="PostgreSQL port")
@@ -1616,6 +1675,330 @@ class TableauConnectionInput(BaseModel):
     date_column: Optional[str] = Field(default=None, description="Main date column for temporal calculations")
     measure_columns: Optional[List[str]] = Field(default=None, description="Numeric columns for calculated fields")
     dimension_columns: Optional[List[str]] = Field(default=None, description="Categorical columns")
+    csv_file_path: Optional[str] = Field(
+        default=None,
+        description=(
+            "Full path to a CSV file (e.g. C:/Users/foo/Desktop/data.csv or C:\\\\Users\\\\foo\\\\data.csv). "
+            "When provided, generates a textscan .tds instead of a PostgreSQL connection."
+        ),
+    )
+
+    @model_validator(mode='after')
+    def check_data_source(self) -> 'TableauConnectionInput':
+        if not self.csv_file_path and not self.table_names:
+            raise ValueError("Either csv_file_path or table_names (PostgreSQL) must be provided.")
+        return self
+
+
+def _generate_tableau_csv_setup(params: TableauConnectionInput) -> str:
+    """Build a complete Tableau CSV (.tds textscan) setup guide from a csv_file_path."""
+    assert params.csv_file_path is not None  # guarded by caller
+
+    directory, filename = _parse_csv_path(params.csv_file_path)
+    stem = filename.rsplit('.', 1)[0] if '.' in filename else filename
+    table_ref = filename.replace('.', '#')
+
+    # Infer columns from the actual CSV file (best-effort; empty list if unreadable)
+    inferred = _infer_csv_columns(params.csv_file_path)
+
+    # Determine first measure and first dimension for calculated fields
+    measures = [c for c in inferred if c['role'] == 'measure']
+    dims = [c for c in inferred if c['role'] == 'dimension']
+    first_measure = measures[0]['name'] if measures else 'value'
+    first_dim = dims[0]['name'] if dims else 'category'
+
+    # ── 1. Column XML blocks ────────────────────────────────────────────────
+    col_lines = []
+    for col in inferred:
+        col_lines.append(
+            f"  <column datatype='{col['datatype']}' name='[{col['name']}]' "
+            f"role='{col['role']}' type='{col['type']}'/>"
+        )
+    columns_xml = '\n'.join(col_lines) if col_lines else \
+        "  <column datatype='string' name='[id]' role='dimension' type='nominal'/>"
+
+    # ── 2. TDS XML ──────────────────────────────────────────────────────────
+    tds_xml = f"""<?xml version='1.0' encoding='utf-8' ?>
+<datasource name='{stem}'
+            caption='{stem}'
+            version='18.1'
+            inline='true'>
+
+  <connection class='textscan'
+              directory='{directory}'
+              filename='{filename}'>
+    <format character=',' header='yes' locale='en_US' />
+    <relation name='{filename}'
+              table='[{table_ref}]'
+              type='table' />
+  </connection>
+
+  <aliases enabled='yes'/>
+
+{columns_xml}
+
+</datasource>"""
+
+    # ── 3. Calculated Fields ────────────────────────────────────────────────
+    m = f"[{first_measure}]"
+    d = f"[{first_dim}]"
+
+    calc_fields = [
+        (
+            "% del Total por Dimensión",
+            f"{{ FIXED {d} : SUM({m}) }} / TOTAL(SUM({m}))",
+            "LOD Expression — porcentaje que representa cada dimensión sobre el total",
+        ),
+        (
+            "Running Total",
+            f"RUNNING_SUM(SUM({m}))",
+            "Acumulado corriente — requiere Table Calculation sobre la vista",
+        ),
+        (
+            "Moving Average 3 Períodos",
+            f"WINDOW_AVG(SUM({m}), -2, 0)",
+            "Promedio móvil de 3 períodos — suaviza variaciones estacionales",
+        ),
+        (
+            "Rank Dense",
+            f"RANK_DENSE(SUM({m}))",
+            "Ranking denso sin huecos entre posiciones iguales",
+        ),
+    ]
+
+    yoy_note = ""
+    date_cols = [c for c in inferred if c['datatype'] == 'date']
+    if date_cols:
+        dc = date_cols[0]['name']
+        calc_fields.append((
+            "YoY Growth (Year-over-Year)",
+            f"(SUM({m}) - LOOKUP(SUM({m}), -12)) / ABS(LOOKUP(SUM({m}), -12))",
+            f"Crecimiento año sobre año — requiere [{dc}] como dimensión mensual en la vista",
+        ))
+        yoy_note = f"\n> ⚠️  YoY Growth requiere que `[{dc}]` esté como dimensión **mensual** en la vista."
+
+    calc_fields_section = ""
+    for name, formula, note in calc_fields:
+        calc_fields_section += f"""
+### `{name}`
+```tableau
+{formula}
+```
+> {note}
+"""
+
+    # ── 4. Viz Recommendations ──────────────────────────────────────────────
+    viz_recs = """| Tipo de Columna | Viz Recomendada en Tableau | Notas |
+| --- | --- | --- |
+| Dimensión (string) | Bar Chart, Treemap, Highlight Table | Arrastra a Rows/Columns |
+| Medida (número) | Bar Chart, Line Chart, Scatter Plot | Arrastra a Columns/Rows |
+| Fecha (date) | Line Chart de series temporales | Usa granularidad Month/Quarter |
+| Fecha + Medida | Dual-Axis Line, Area Chart | Click derecho → Dual Axis |
+| Dimensión + Medida | Horizontal Bar (ranking) | Sort descending para top-N |
+| Dos Medidas | Scatter Plot | Detecta correlaciones |"""
+
+    # ── 5. Step-by-Step Instructions ────────────────────────────────────────
+    instructions = f"""### Opción A — Abrir el .tds directamente (más rápido)
+El archivo `.tds` de arriba ya tiene `directory` y `filename` separados, que es
+exactamente lo que Tableau necesita para leer un CSV sin errores.
+
+1. Copia todo el XML de la sección anterior y pégalo en un editor de texto (Notepad, VS Code, etc.)
+2. Guárdalo como **`{stem}.tds`** — asegúrate de que la extensión sea `.tds`, no `.txt`
+3. Edita el atributo `directory` con la carpeta exacta donde está tu archivo:
+   ```
+   directory='{directory}'
+   ```
+   > En Windows usa barras `/` o barras dobles `\\\\` — Tableau acepta ambas.
+   > Ejemplo válido: `C:/Users/TuNombre/Documents/datos`
+4. Haz **doble clic** en el archivo `{stem}.tds` — Tableau Desktop lo abrirá directamente
+5. Verás la tabla `{filename}` ya cargada en el panel izquierdo lista para arrastrar
+
+### Opción B — Conectar manualmente desde Tableau Desktop
+Usa esta opción si prefieres el flujo visual:
+
+1. Abre **Tableau Desktop** → pantalla de inicio → sección **Connect**
+2. En la columna **To a File** haz clic en **Text file**
+   > Si no ves "Text file", busca en **More...** al final de la lista
+3. En el explorador de archivos navega a:
+   ```
+   {directory}
+   ```
+   Selecciona **`{filename}`** y haz clic en **Open**
+4. Tableau abre la pantalla **Data Source**. Verifica:
+   - El separador detectado debe ser **Coma (,)**. Si no, haz clic en el ícono de llave
+     inglesa (⚙️) arriba a la derecha → cambia **Field Separator** a **Comma**
+   - La primera fila debe mostrar los nombres de columna, no datos. Si no,
+     activa **Use Data Interpreter** en el panel izquierdo
+5. Arrastra la tabla **`{filename}`** desde el panel izquierdo al área central
+   (donde dice "Drag tables here")
+6. Haz clic en la pestaña **Sheet 1** al fondo para empezar a construir tu viz
+7. **Guarda el datasource** para reutilizarlo sin reconectar:
+   - Menú **Data** → **`{stem}`** → **Add to Saved Data Sources...**
+   - Esto genera un `.tds` en tu carpeta `My Tableau Repository/Datasources`
+
+### Opción C — Tableau Public (gratis, sin instalación de pago)
+Tableau Public es idéntico a Desktop para CSVs pero gratis:
+
+1. Descarga desde **public.tableau.com** → Get Tableau Public (botón azul)
+2. Instala y abre → **Connect** → **Text file** → selecciona `{filename}`
+3. Sigue los mismos pasos que la Opción B desde el punto 4
+4. Al terminar: **File** → **Save to Tableau Public** para publicar gratis
+   > Tus datos quedan visibles públicamente — no uses datos confidenciales"""
+
+    # ── 6. Best Practices ───────────────────────────────────────────────────
+    best_practices = f"""### Antes de conectar — prepara el archivo
+- **Ruta estable**: Mueve `{filename}` a una carpeta permanente (ej: `Documents/tableau-data/`),
+  no en Downloads ni Desktop. Si cambias la ruta deberás editar el `.tds`.
+- **Codificación UTF-8**: Ábrelo en Excel → Guardar como → CSV UTF-8 (con BOM).
+  Esto evita que tildes y ñ aparezcan como caracteres extraños.
+- **Sin espacios en el nombre**: Si el nombre tiene espacios, renómbralo con guiones
+  (`mi-archivo.csv`). Tableau los acepta pero evita confusiones en la ruta.
+- **Headers limpios**: Los nombres de columna no deben empezar con número ni tener
+  caracteres especiales (`#`, `%`, `(`, `)`). Renómbralos antes de cargar.
+- **Filas vacías al inicio**: Si el CSV tiene filas de título o metadatos antes del
+  header real, elimínalas — Tableau lee desde la primera fila.
+
+### Durante la conexión
+- **Revisa los tipos detectados** en la pantalla Data Source: Tableau muestra `Abc`
+  (string), `#` (número) o un ícono de calendario (fecha) debajo de cada columna.
+  Si una columna numérica aparece como `Abc`, haz clic en el ícono y cámbiala a **Number**.
+- **Renombra columnas en Tableau** (sin tocar el CSV): doble clic sobre el nombre de la
+  columna en Data Source → escribe el nombre amigable. Esto se guarda en el `.tds`.
+- **Oculta columnas innecesarias**: clic derecho sobre la columna → **Hide**.
+  Hace la viz más limpia y mejora el rendimiento.
+- **Crea un Extract (.hyper)** si el CSV tiene más de 100 000 filas:
+  Data Source → esquina superior derecha → **Extract** → **Create Extract**.
+  Un extract carga los datos en memoria y hace los filtros mucho más rápidos.
+
+### Al construir la visualización
+- **Dimensiones van a Rows/Columns, Medidas van a Marks o a Size/Color**.
+  Si arrastras una medida a Rows Tableau la suma automáticamente.
+- **Para ver valores individuales** (sin agregar): clic derecho sobre la medida
+  en el estante → **Dimension** (desactiva la agregación).
+- **Filtros antes de la viz**: usa la tarjeta **Filters** para limitar fechas o
+  categorías antes de construir — evita que Tableau cargue datos que no necesitas.
+- **Guarda frecuentemente** con Ctrl+S. Tableau guarda el `.twb` (workbook)
+  separado del `.tds` (datasource)."""
+
+    # ── 7. Troubleshooting ──────────────────────────────────────────────────
+    troubleshooting = f"""### Error: Tableau no encuentra el archivo al abrir el .tds
+**Causa**: El atributo `directory` en el XML no coincide con la carpeta actual del CSV.
+**Fix**: Abre el `.tds` en un editor de texto → cambia `directory='...'` por la ruta
+correcta → guarda → vuelve a abrirlo en Tableau.
+
+### Error: Los números aparecen como texto (Abc en vez de #)
+**Causa**: El CSV tiene comas como separador de miles (`1,234`) o usa punto y coma
+como separador de campo.
+**Fix**: En Data Source → ícono ⚙️ → **Field Separator** → selecciona el separador
+correcto. Para miles, aplica un `FLOAT(REPLACE([columna], ",", ""))` como campo calculado.
+
+### Error: Las fechas no se reconocen
+**Causa**: El formato de fecha no es estándar (ej: `15/03/2024` en vez de `2024-03-15`).
+**Fix**: En Data Source → haz clic en el ícono de tipo bajo la columna de fecha →
+**Date** → Tableau preguntará el formato → selecciona el que corresponde.
+Alternativa: campo calculado `DATE(DATEPARSE("dd/MM/yyyy", [columna_fecha]))`.
+
+### Error: Tildes y ñ aparecen como símbolos raros
+**Causa**: El CSV está en Latin-1 / Windows-1252, no en UTF-8.
+**Fix**: Abre el CSV en Notepad++ → Encoding → Convert to UTF-8 with BOM → guarda.
+Si no tienes Notepad++: Excel → Guardar como → CSV UTF-8 (con BOM).
+
+### Error: "Error 88A6ADA0" o Tableau no carga el datasource
+**Causa**: El path completo estaba en el atributo `filename` en vez de separar
+`directory` y `filename`. El `.tds` generado por esta herramienta ya lo corrige.
+**Fix**: Verifica que el XML del `.tds` tenga ambos atributos por separado:
+```xml
+<connection class='textscan'
+            directory='{directory}'
+            filename='{filename}'>
+```
+
+### Columnas no aparecen en el panel de Tableau
+**Causa**: La columna puede estar oculta o Tableau no detectó el tipo correctamente.
+**Fix**: En Data Source, esquina superior derecha → **Show Hidden Fields**.
+Si la columna sigue sin aparecer, revisa que el header del CSV no tenga espacios
+al inicio ni al final (trim en Excel: `=TRIM(A1)`)."""
+
+    # ── 8. Cost Note ────────────────────────────────────────────────────────
+    cost_note = """| Plan | Precio | CSV directo | Limitaciones clave |
+| --- | --- | --- | --- |
+| **Tableau Public** | **$0** | ✅ Sí | Datos públicos; sin conexión a BD |
+| **Tableau Creator** | **$75/user/mes** | ✅ Sí | Todo incluido; precio por usuario |
+| **Tableau Explorer** | **$42/user/mes** | ✅ Solo web | Requiere al menos 1 Creator en la org |
+| **Tableau Viewer** | **$15/user/mes** | ❌ | Solo lectura de dashboards publicados |
+
+> **Recomendación para empezar**: usa **Tableau Public** con tu CSV — es idéntico a
+> Creator para fuentes de archivo. Cuando necesites conectar a bases de datos o
+> mantener datos privados, considera Creator.
+>
+> **Alternativa $0 con datos privados**: Power BI Desktop conecta CSV y no publica
+> nada públicamente — usa `datapocket_powerbi_setup` para el paquete equivalente."""
+
+    m_names = ', '.join('`' + c['name'] + '`' for c in measures[:5])
+    d_names = ', '.join('`' + c['name'] + '`' for c in dims[:5])
+    col_summary = f"{len(measures)} medida(s): {m_names}" if measures else "sin medidas detectadas"
+    dim_summary = f"{len(dims)} dimensión(es): {d_names}" if dims else "sin dimensiones detectadas"
+
+    return f"""# 📊 DataPocket — Tableau CSV Setup
+
+## Archivo: `{filename}`
+- **Directorio**: `{directory}`
+- **Columnas inferidas**: {col_summary} · {dim_summary}
+
+---
+
+## 1. Archivo .tds (Tableau Datasource XML)
+
+El `.tds` usa `class='textscan'` con `directory` y `filename` como atributos
+separados — esta es la estructura que Tableau requiere para CSVs. Poner la ruta
+completa en `filename` causa el error `88A6ADA0`; este archivo lo evita.
+
+Guarda el XML como **`{stem}.tds`** (extensión `.tds`, no `.txt`):
+
+```xml
+{tds_xml}
+```
+
+---
+
+## 2. Instrucciones de Conexión Paso a Paso
+
+{instructions}
+
+---
+
+## 3. Calculated Fields (sintaxis Tableau nativa)
+
+Crea cada uno en **Analysis → Create Calculated Field** (o clic derecho en el
+panel de datos → **Create Calculated Field**). El nombre que pongas aparecerá
+como una nueva columna en tu viz.
+
+{calc_fields_section}{yoy_note}
+
+---
+
+## 4. Buenas Prácticas
+
+{best_practices}
+
+---
+
+## 5. Solución de Errores Comunes
+
+{troubleshooting}
+
+---
+
+## 6. Recomendaciones de Visualización
+
+{viz_recs}
+
+---
+
+## 7. Costos — Tableau Public vs Licencias
+
+{cost_note}
+"""
 
 
 @mcp.tool(
@@ -1648,6 +2031,9 @@ async def datapocket_tableau_setup(params: TableauConnectionInput) -> str:
     Returns:
         str: Complete Tableau setup guide with .tds XML, calculated fields, Custom SQL, and viz recommendations.
     """
+    if params.csv_file_path:
+        return _generate_tableau_csv_setup(params)
+
     safe_tables = [_sanitize_table_name(t) for t in params.table_names]
     primary_table = safe_tables[0]
     first_measure = (params.measure_columns or ["revenue"])[0]
